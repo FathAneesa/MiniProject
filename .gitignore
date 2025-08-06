@@ -16,6 +16,7 @@ web
 ios 
 android 
 test 
+.env
 venv
 
 # IntelliJ related
