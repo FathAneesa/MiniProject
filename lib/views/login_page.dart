@@ -1,9 +1,10 @@
-// File: lib/views/login_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
+
+import 'Stud_dash.dart';  // Import your dashboard file here (case-sensitive)
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -33,14 +34,19 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = true;
     });
 
-    final url = Uri.parse('http://localhost:8000/login');
+    // Replace with your actual IP address and port
+    final url = Uri.parse('http://192.168.29.37:8000/login');
+
+
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username, 'password': password}),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'username': username, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 5));
 
       setState(() {
         isLoading = false;
@@ -52,7 +58,12 @@ class _LoginPageState extends State<LoginPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Login successful!')),
           );
-          // TODO: Navigate to your home/dashboard screen here
+
+          // Navigate to dashboard page after successful login
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const StudDash()),
+          );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(data['message'] ?? 'Login failed')),
@@ -64,6 +75,20 @@ class _LoginPageState extends State<LoginPage> {
           SnackBar(content: Text(error['detail'] ?? 'Error during login')),
         );
       }
+    } on http.ClientException catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connection error: $e')),
+      );
+    } on TimeoutException {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Connection timed out.')),
+      );
     } catch (e) {
       setState(() {
         isLoading = false;
@@ -105,10 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       SizedBox(
                         height: 80,
-                        child: Image.asset(
-                          'logo.png',
-                          fit: BoxFit.contain,
-                        ),
+                        child: Image.asset('logo.png', fit: BoxFit.contain),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -151,7 +173,9 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           child: isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
                               : Text(
                                   'Login',
                                   style: GoogleFonts.poppins(
@@ -165,7 +189,9 @@ class _LoginPageState extends State<LoginPage> {
                       GestureDetector(
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Forgot password tapped')),
+                            const SnackBar(
+                              content: Text('Forgot password tapped'),
+                            ),
                           );
                         },
                         child: Text(
