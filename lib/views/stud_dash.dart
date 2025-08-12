@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'add_academic.dart';
+import 'login_page.dart'; // ✅ Added for logout navigation
 
 class StudDash extends StatelessWidget {
-  const StudDash({Key? key}) : super(key: key);
+  final Map<String, dynamic> studentData;
+
+  const StudDash({super.key, required this.studentData});
 
   @override
   Widget build(BuildContext context) {
+    // Extract student name and ID, with fallbacks for safety
+    final String studentName = studentData['Student Name'] ?? "Student";
+    final String studentId = studentData['UserID'] ?? "";
+
     return Scaffold(
-      // backgroundColor is not needed since gradient is set in Container
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -20,34 +27,36 @@ class StudDash extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: Column(
           children: [
-            // Logo Circle
             CircleAvatar(
               radius: 50,
               backgroundColor: Colors.white,
-              child: Image.asset(
-                'assets/logo.png', // Replace with your logo path
-                width: 60,
-              ),
+              child: Image.asset('assets/logo.png', width: 60),
             ),
             const SizedBox(height: 20),
-
-            // Welcome Text
             Text(
-              "Welcome, Student's Name",
+              "Welcome, $studentName", // Personalized welcome message
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 30),
 
-            // Buttons
             _buildButton(
               context,
               label: "Add Academic Data",
               color: const Color(0xFF6A5ACD),
               icon: Icons.add,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddAcademicPage(studentId: studentId),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
 
@@ -56,6 +65,8 @@ class StudDash extends StatelessWidget {
               label: "Take Memory/Focus Test",
               color: const Color(0xFF28C78E),
               icon: Icons.psychology,
+              onTap: () {
+              },
             ),
             const SizedBox(height: 16),
 
@@ -64,6 +75,8 @@ class StudDash extends StatelessWidget {
               label: "View Daily Recommendation",
               color: const Color(0xFF9370DB),
               icon: Icons.star,
+              onTap: () {
+              },
             ),
             const SizedBox(height: 16),
 
@@ -72,6 +85,8 @@ class StudDash extends StatelessWidget {
               label: "View Weekly Progress",
               color: const Color(0xFFF06292),
               icon: Icons.bar_chart,
+              onTap: () {
+              },
             ),
             const SizedBox(height: 16),
 
@@ -80,6 +95,35 @@ class StudDash extends StatelessWidget {
               label: "Logout",
               color: const Color(0xFFE57373),
               icon: Icons.logout,
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text("Logout"),
+                      content: const Text("Are you sure you want to logout?"),
+                      actions: [
+                        TextButton(
+                          child: const Text("Cancel"),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        TextButton(
+                          child: const Text("Logout"),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
@@ -87,15 +131,18 @@ class StudDash extends StatelessWidget {
     );
   }
 
-  Widget _buildButton(BuildContext context,
-      {required String label, required Color color, required IconData icon}) {
+  Widget _buildButton(
+    BuildContext context, {
+    required String label,
+    required Color color,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return SizedBox(
       width: double.infinity,
       height: 55,
       child: ElevatedButton.icon(
-        onPressed: () {
-          // TODO: Add navigation
-        },
+        onPressed: onTap,
         icon: Icon(icon, color: Colors.white),
         label: Text(
           label,

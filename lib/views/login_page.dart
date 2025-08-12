@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:async';
+import 'dart:async'; // For TimeoutException
+import 'admin_dash.dart';
+import 'stud_dash.dart';
 
-import 'Stud_dash.dart';  // Import your dashboard file here (case-sensitive)
+// Centralized API Base URL. Other files will import this.
+const String apiBaseUrl = 'http://192.168.1.100:8000';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -34,10 +37,7 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = true;
     });
 
-    // Replace with your actual IP address and port
-    final url = Uri.parse('http://192.168.29.37:8000/login');
-
-
+    final url = Uri.parse('$apiBaseUrl/login');
 
     try {
       final response = await http
@@ -46,7 +46,9 @@ class _LoginPageState extends State<LoginPage> {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'username': username, 'password': password}),
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 10));
+
+      if (!mounted) return; // Guard against async gaps
 
       setState(() {
         isLoading = false;
@@ -56,46 +58,50 @@ class _LoginPageState extends State<LoginPage> {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login successful!')),
+            const SnackBar(content: Text('Login successful!'), backgroundColor: Colors.green),
           );
 
-          // Navigate to dashboard page after successful login
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const StudDash()),
-          );
+          // Navigate based on user role from the API response
+          final role = data['role'];
+          if (role == 'admin') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDash()),
+            );
+          } else if (role == 'student') {
+            final studentData = data['user_data'];
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => StudDash(studentData: studentData)),
+            );
+          } else {
+             ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Unknown user role: $role'), backgroundColor: Colors.orange),
+            );
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'] ?? 'Login failed')),
+            SnackBar(content: Text(data['message'] ?? 'Login failed'), backgroundColor: Colors.red),
           );
         }
       } else {
         final error = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error['detail'] ?? 'Error during login')),
+          SnackBar(content: Text(error['detail'] ?? 'Error during login'), backgroundColor: Colors.red),
         );
       }
     } on http.ClientException catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Connection error: $e')),
-      );
+      if (!mounted) return;
+      setState(() { isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Connection error: $e'), backgroundColor: Colors.red));
     } on TimeoutException {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection timed out.')),
-      );
+      if (!mounted) return;
+      setState(() { isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Connection timed out.'), backgroundColor: Colors.red));
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network error: $e')),
-      );
+      if (!mounted) return;
+      setState(() { isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Network error: $e'), backgroundColor: Colors.red));
     }
   }
 
@@ -117,7 +123,7 @@ class _LoginPageState extends State<LoginPage> {
           Center(
             child: SingleChildScrollView(
               child: Card(
-                color: Colors.deepPurple.shade100.withOpacity(0.85),
+                color: Colors.deepPurple.shade100.withAlpha(217), // Fixed deprecation
                 elevation: 10,
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 shape: RoundedRectangleBorder(
@@ -130,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       SizedBox(
                         height: 80,
-                        child: Image.asset('logo.png', fit: BoxFit.contain),
+                        child: Image.asset('assets/logo.png', fit: BoxFit.contain), // Assuming 'logo.png' is in an 'assets' folder
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -181,6 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                                   style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 16,
+                                    color: Colors.white,
                                   ),
                                 ),
                         ),
