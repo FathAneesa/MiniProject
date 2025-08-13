@@ -79,7 +79,6 @@ class _StoreStudState extends State<StoreStud> {
                   DataColumn(label: Text("Guardian Name")),
                   DataColumn(label: Text("Guardian Phone")),
                   DataColumn(label: Text("User ID")),
-                  DataColumn(label: Text("Password")),
                 ],
                 rows: studentList.map((student) {
                   return DataRow(cells: [
@@ -98,7 +97,6 @@ class _StoreStudState extends State<StoreStud> {
                     DataCell(Text(student["Guardian Name"]?.toString() ?? "")),
                     DataCell(Text(student["Guardian Phone"]?.toString() ?? "")),
                     DataCell(Text(student["UserID"]?.toString() ?? "")),
-                    DataCell(Text(student["Password"]?.toString() ?? "")),
                   ]);
                 }).toList(),
               ),

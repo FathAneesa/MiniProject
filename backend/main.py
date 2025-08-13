@@ -1,11 +1,12 @@
-# main.py
+# /backend/main.py
+
 import os
-from typing import List, Optional
+from typing import List, Optional, Any
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, Extra
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 
@@ -28,12 +29,10 @@ app = FastAPI(
     description="API for user authentication and data management."
 )
 
-# === CORS Middleware ===
-origins = [
-    "http://localhost",
-    "http://localhost:5000",
-    "http://127.0.0.1:5000"
-]
+# === CORS Middleware (FIXED) ===
+# Using a wildcard "*" is the easiest way to solve connection issues during development.
+# It allows requests from any origin (like your Flutter web app running on a random port).
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -66,13 +65,11 @@ async def shutdown_db_client():
 # ========================
 # Pydantic models
 # ========================
-# Pydantic model for User registration and login
 class User(BaseModel):
     username: str
     password: str
-    role: Optional[str] = "student" # Default role for new users
+    role: Optional[str] = "student"
 
-# Pydantic model for the data returned from the database
 class UserOut(BaseModel):
     id: str = Field(alias="_id")
     username: str
@@ -82,13 +79,35 @@ class UserOut(BaseModel):
         json_encoders = {ObjectId: str}
         arbitrary_types_allowed = True
         
+# NEW: Models for Student and Academic data
+class Student(BaseModel, extra=Extra.allow):
+    UserID: str
+    Password: str
+
+class StudentOut(BaseModel, extra=Extra.allow):
+    id: str = Field(alias="_id")
+
+    class Config:
+        json_encoders = {ObjectId: str}
+        arbitrary_types_allowed = True
+
+class Subject(BaseModel):
+    name: str
+    mark: str
+
+class AcademicData(BaseModel):
+    studentId: str
+    subjects: List[Subject]
+    studyHours: str
+    focusLevel: str
+    overallMark: int
+
 # ========================
 # Routes
 # ========================
 
 @app.get("/test-connection", response_description="Test database connection")
 async def test_connection():
-    """Tests the connection to MongoDB by listing collections."""
     try:
         await app.mongodb.list_collection_names()
         return {"status": "success", "message": "Connected to MongoDB Atlas"}
@@ -100,63 +119,104 @@ async def test_connection():
 
 @app.post("/register", response_description="Register a new user", status_code=status.HTTP_201_CREATED)
 async def register_user(user: User):
-    """Registers a new user."""
     users_collection = app.mongodb["users"]
-    
-    # Check if username already exists
     if await users_collection.find_one({"username": user.username}):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Username already exists"
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists")
     
     user_dict = user.dict()
-    
     try:
         result = await users_collection.insert_one(user_dict)
         return {"status": "success", "id": str(result.inserted_id)}
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error registering user: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error registering user: {str(e)}")
 
 @app.post("/login", response_description="Login user")
 async def login_user(user: User):
-    """Authenticates a user and returns a success message on valid credentials."""
+    """(FIXED) Authenticates a user and returns their data on success."""
     users_collection = app.mongodb["users"]
-    
     db_user = await users_collection.find_one({"username": user.username, "password": user.password})
 
     if not db_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
-        )
-        
-    return {
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+    
+    user_role = db_user.get("role", "student")
+    response_data = {
         "status": "success",
         "message": "Login successful",
-        "role": db_user.get("role", "student") # Return the role from the database
+        "role": user_role
     }
+
+    # If the user is a student, fetch their detailed data to return to the app
+    if user_role == "student":
+        students_collection = app.mongodb["students"]
+        student_details = await students_collection.find_one({"UserID": user.username})
+        if student_details:
+            student_details["_id"] = str(student_details["_id"])
+            response_data["user_data"] = student_details
+        else:
+            response_data["user_data"] = None # Student details not found
+
+    return response_data
 
 @app.get("/users", response_description="List all users", response_model=List[UserOut])
 async def list_users():
-    """Fetches and returns a list of all users from the database."""
     users_collection = app.mongodb["users"]
     users = []
-    
     try:
         async for u in users_collection.find():
             users.append(UserOut.model_validate(u))
         return users
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error fetching users: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error fetching users: {str(e)}")
 
-# === Run the app with Uvicorn ===
-# To run this file, save it and use the command:
-# uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-# Remember to have your .env file with MONGO_URI set.
+# === NEW: Student Routes ===
+@app.post("/students/add", response_description="Add a new student", status_code=status.HTTP_201_CREATED)
+async def add_student(student: Student):
+    """Adds a new student and creates a corresponding user login."""
+    student_data = student.dict(exclude={"Password"})
+    user_credentials = {
+        "username": student.UserID,
+        "password": student.Password,
+        "role": "student"
+    }
+
+    students_collection = app.mongodb["students"]
+    users_collection = app.mongodb["users"]
+
+    if await students_collection.find_one({"Admission No": student_data.get("Admission No")}):
+        raise HTTPException(status_code=409, detail="Student with this Admission Number already exists.")
+    if await users_collection.find_one({"username": user_credentials["username"]}):
+        raise HTTPException(status_code=409, detail="User with this UserID already exists.")
+
+    try:
+        await students_collection.insert_one(student_data)
+        await users_collection.insert_one(user_credentials)
+        return {"status": "success", "message": "Student added and user created successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+
+@app.get("/students", response_description="List all students", response_model=List[dict[str, Any]])
+async def list_students():
+    """Fetches and returns a list of all students."""
+    students_collection = app.mongodb["students"]
+    students = []
+    async for s in students_collection.find():
+        s["_id"] = str(s["_id"]) # Convert ObjectId to string for JSON
+        students.append(s)
+    return students
+
+# === NEW: Academics Route ===
+@app.post("/academics/add", response_description="Add academic data for a student", status_code=status.HTTP_201_CREATED)
+async def add_academic_data(data: AcademicData):
+    """Saves academic data for a specific student."""
+    academics_collection = app.mongodb["academics"]
+    
+    students_collection = app.mongodb["students"]
+    if not await students_collection.find_one({"UserID": data.studentId}):
+         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Student with ID {data.studentId} not found.")
+
+    try:
+        await academics_collection.insert_one(data.dict())
+        return {"status": "success", "message": "Academic data added successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error saving academic data: {str(e)}")
