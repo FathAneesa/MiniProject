@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'dart:async'; // For TimeoutException
 import 'admin_dash.dart';
 import 'stud_dash.dart';
+import 'forgot.dart'; // Add this with other imports
+
 
 // Using 127.0.0.1 is best for local development.
 const String apiBaseUrl = 'http://127.0.0.1:8000';
@@ -198,12 +200,12 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
                       GestureDetector(
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Forgot password tapped'),
-                            ),
-                          );
-                        },
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+  );
+},
+
                         child: Text(
                           'Forgot password? Click here.',
                           style: GoogleFonts.poppins(

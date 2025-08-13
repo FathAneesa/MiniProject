@@ -19,14 +19,14 @@ class _AddStudState extends State<AddStud> {
   final TextEditingController _admissionNoController = TextEditingController();
   final TextEditingController _academicYearController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); // Added Email
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _fatherNameController = TextEditingController();
   final TextEditingController _motherNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _parentPhoneController = TextEditingController();
   final TextEditingController _guardianNameController = TextEditingController();
-  final TextEditingController _guardianPhoneController =
-      TextEditingController();
+  final TextEditingController _guardianPhoneController = TextEditingController();
 
   String? _selectedDepartment;
   String? _selectedSemester;
@@ -52,6 +52,7 @@ class _AddStudState extends State<AddStud> {
         "Admission No": admissionNo,
         "Academic Year": _academicYearController.text.trim(),
         "Phone": _phoneController.text.trim(),
+        "Email": _emailController.text.trim(), // Added Email
         "DOB": _dobController.text.trim(),
         "Father Name": _fatherNameController.text.trim(),
         "Mother Name": _motherNameController.text.trim(),
@@ -246,6 +247,7 @@ class _AddStudState extends State<AddStud> {
                 (val) => setState(() => _selectedSemester = val),
               ),
               _buildTextField("Phone Number", _phoneController, isNumber: true),
+              _buildTextField("Email ID", _emailController), // Added Email Field
               _buildDropdown(
                 "Gender",
                 _selectedGender,
