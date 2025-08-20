@@ -65,14 +65,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 104, 7, 80),
+      backgroundColor: Colors.blue[500],
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 236, 94, 167),
+              color: Colors.blue[400],
               borderRadius: BorderRadius.circular(20),
             ),
             child: Form(
@@ -106,23 +106,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: _sendVerificationLink,
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: _sendVerificationLink,
                       child: Text(
-                        "Send OTP",
+                        "Send verification link / OTP",
                         style: GoogleFonts.poppins(
-                          fontSize: 16,
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
                         ),
                       ),
                     ),
@@ -202,24 +194,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        onPressed: _changePassword,
-                        child: Text(
-                          "Change Password",
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    GestureDetector(
+                      onTap: _changePassword,
+                      child: Text(
+                        "Change password",
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          decoration: TextDecoration.underline,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
