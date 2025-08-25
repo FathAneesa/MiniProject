@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'add_academic.dart';
-import 'view_subjects.dart'; // ✅ Import your page here
 import 'login_page.dart'; // ✅ Added for logout navigation
 
 class StudDash extends StatelessWidget {
@@ -57,24 +56,6 @@ class StudDash extends StatelessWidget {
                     builder: (context) => AddAcademicPage(studentId: studentId),
                   ),
                 );
-              },
-            ),
-            const SizedBox(height: 16),
-            // ✅ New "View Academic Performance" button
-            _buildButton(
-              context,
-              label: "View Academic Performance",
-              color: const Color(0xFF4682B4),
-              icon: Icons.school,
-              onTap: () {
-                // TODO: Navigate to ViewAcademicPage
-                // Example:
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => ViewAcademicPage(studentId: studentId),
-                //   ),
-                // );
               },
             ),
             const SizedBox(height: 16),

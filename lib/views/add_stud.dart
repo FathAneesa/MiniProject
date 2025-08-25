@@ -19,7 +19,7 @@ class _AddStudState extends State<AddStud> {
   final TextEditingController _admissionNoController = TextEditingController();
   final TextEditingController _academicYearController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); // Added Email
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _fatherNameController = TextEditingController();
   final TextEditingController _motherNameController = TextEditingController();
@@ -35,14 +35,6 @@ class _AddStudState extends State<AddStud> {
   final List<String> departments = ['MCA', 'MBA'];
   final List<String> semesters = ['1', '2', '3', '4'];
   final List<String> genders = ['Male', 'Female', 'Other'];
-
-  bool isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@gmail\.com$').hasMatch(email);
-  }
-
-  bool isValidPhone(String phone) {
-    return RegExp(r'^\d{10}$').hasMatch(phone);
-  }
 
   Future<void> _saveStudent() async {
     if (_formKey.currentState!.validate()) {
@@ -60,7 +52,7 @@ class _AddStudState extends State<AddStud> {
         "Admission No": admissionNo,
         "Academic Year": _academicYearController.text.trim(),
         "Phone": _phoneController.text.trim(),
-        "Email": _emailController.text.trim(),
+        "Email": _emailController.text.trim(), // Added Email
         "DOB": _dobController.text.trim(),
         "Father Name": _fatherNameController.text.trim(),
         "Mother Name": _motherNameController.text.trim(),
@@ -86,6 +78,7 @@ class _AddStudState extends State<AddStud> {
         if (!mounted) return;
 
         if (response.statusCode == 201) {
+          // Successfully created
           showDialog(
             context: context,
             builder: (_) => AlertDialog(
@@ -117,11 +110,11 @@ class _AddStudState extends State<AddStud> {
                   const SizedBox(height: 20),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8A56AC), // Deep purple accent
+                      backgroundColor: Colors.blue,
                     ),
                     onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
+                      Navigator.pop(context); // Close dialog
+                      Navigator.pop(context); // Go back to admin dash
                     },
                     child: const Text(
                       "OK",
@@ -168,43 +161,19 @@ class _AddStudState extends State<AddStud> {
     bool isMultiline = false,
     bool readOnly = false,
     VoidCallback? onTap,
-    bool isEmail = false,
-    bool isPhone = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: TextFormField(
-        autovalidateMode: AutovalidateMode.onUserInteraction,
         controller: controller,
         readOnly: readOnly,
         onTap: onTap,
         maxLines: isMultiline ? 3 : 1,
-        keyboardType: isNumber || isPhone
-            ? TextInputType.number
-            : isEmail
-                ? TextInputType.emailAddress
-                : TextInputType.text,
-        validator: (value) {
-          if (value == null || value.trim().isEmpty) {
-            return 'Please enter $label';
-          }
-          if (isEmail && !isValidEmail(value.trim())) {
-            return 'Please enter a valid Gmail ID';
-          }
-          if (isPhone && !isValidPhone(value.trim())) {
-            return 'Please enter a valid 10-digit phone number';
-          }
-          if (label == "Admission Number" &&
-              !RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value.trim())) {
-            return 'Admission Number can only contain letters and numbers';
-          }
-          return null;
-        },
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        validator: (value) => value!.isEmpty ? 'Please enter $label' : null,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: GoogleFonts.poppins(),
-          filled: true,
-          fillColor: Colors.white,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
@@ -220,7 +189,6 @@ class _AddStudState extends State<AddStud> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: DropdownButtonFormField<String>(
-        autovalidateMode: AutovalidateMode.onUserInteraction,
         value: value,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -230,8 +198,6 @@ class _AddStudState extends State<AddStud> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: GoogleFonts.poppins(),
-          filled: true,
-          fillColor: Colors.white,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
@@ -241,14 +207,12 @@ class _AddStudState extends State<AddStud> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEAB0F4), // Soft Lavender background
       appBar: AppBar(
         title: Text(
           "Add Student",
-          style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        backgroundColor: const Color(0xFF8A56AC), // Deep purple accent
+        backgroundColor: Colors.blue,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
@@ -264,17 +228,32 @@ class _AddStudState extends State<AddStud> {
                 readOnly: true,
               ),
               _buildTextField("Student Name", _studentNameController),
-              _buildTextField("Admission Number", _admissionNoController,
-                  isNumber: false),
-              _buildDropdown("Department", _selectedDepartment, departments,
-                  (val) => setState(() => _selectedDepartment = val)),
+              _buildTextField(
+                "Admission Number",
+                _admissionNoController,
+                isNumber: true,
+              ),
+              _buildDropdown(
+                "Department",
+                _selectedDepartment,
+                departments,
+                (val) => setState(() => _selectedDepartment = val),
+              ),
               _buildTextField("Academic Year", _academicYearController),
-              _buildDropdown("Semester", _selectedSemester, semesters,
-                  (val) => setState(() => _selectedSemester = val)),
-              _buildTextField("Phone Number", _phoneController, isPhone: true),
-              _buildTextField("Email ID", _emailController, isEmail: true),
-              _buildDropdown("Gender", _selectedGender, genders,
-                  (val) => setState(() => _selectedGender = val)),
+              _buildDropdown(
+                "Semester",
+                _selectedSemester,
+                semesters,
+                (val) => setState(() => _selectedSemester = val),
+              ),
+              _buildTextField("Phone Number", _phoneController, isNumber: true),
+              _buildTextField("Email ID", _emailController), // Added Email Field
+              _buildDropdown(
+                "Gender",
+                _selectedGender,
+                genders,
+                (val) => setState(() => _selectedGender = val),
+              ),
               _buildTextField(
                 "Date of Birth",
                 _dobController,
@@ -294,22 +273,30 @@ class _AddStudState extends State<AddStud> {
               ),
               _buildTextField("Father's Name", _fatherNameController),
               _buildTextField("Mother's Name", _motherNameController),
-              _buildTextField("Address", _addressController,
-                  isMultiline: true),
-              _buildTextField("Parent's Phone Number", _parentPhoneController,
-                  isPhone: true),
+              _buildTextField("Address", _addressController, isMultiline: true),
+              _buildTextField(
+                "Parent's Phone Number",
+                _parentPhoneController,
+                isNumber: true,
+              ),
               _buildTextField("Guardian Name", _guardianNameController),
-              _buildTextField("Guardian Phone Number",
-                  _guardianPhoneController, isPhone: true),
+              _buildTextField(
+                "Guardian Phone Number",
+                _guardianPhoneController,
+                isNumber: true,
+              ),
               const SizedBox(height: 20),
               Center(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6A3FA1), // Slightly darker purple
+                    backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 12),
+                      horizontal: 30,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   onPressed: _isLoading ? null : _saveStudent,
                   child: _isLoading
@@ -317,7 +304,9 @@ class _AddStudState extends State<AddStud> {
                       : Text(
                           "Save Student",
                           style: GoogleFonts.poppins(
-                              fontSize: 16, color: Colors.white),
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
                         ),
                 ),
               ),

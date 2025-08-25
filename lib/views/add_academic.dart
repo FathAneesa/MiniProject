@@ -88,9 +88,9 @@ class _AddAcademicPageState extends State<AddAcademicPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 213, 79, 128),
+      backgroundColor: Colors.lightBlue[50],
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 165, 50, 52),
+        backgroundColor: Colors.blueAccent,
         title: Text(
           'Add Academic Data',
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
@@ -223,29 +223,37 @@ class _AddAcademicPageState extends State<AddAcademicPage> {
 
             const SizedBox(height: 20),
             Row(
-  mainAxisAlignment: MainAxisAlignment.end,
-  children: [
-    ElevatedButton(
-      onPressed: _isConfirming ? null : _confirmAcademicData,
-      style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(
-              horizontal: 20, vertical: 12)),
-      child: _isConfirming
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 3,
-              ),
-            )
-          : Text("Confirm",
-              style: GoogleFonts.poppins(color: Colors.white)),
-    ),
-  ],
-),
-
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              ViewSubjectsPage(subjects: subjects)),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12)),
+                  child: Text("View",
+                      style: GoogleFonts.poppins(color: Colors.white)),
+                ),
+                ElevatedButton(
+                  onPressed: _isConfirming ? null : _confirmAcademicData,
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12)),
+                  child: _isConfirming
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3,))
+                      : Text("Confirm",
+                          style: GoogleFonts.poppins(color: Colors.white)),
+                ),
+              ],
+            ),
           ],
         ),
       ),

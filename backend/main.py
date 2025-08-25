@@ -10,12 +10,6 @@ from pydantic import BaseModel, Field, Extra
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 
-import random
-import smtplib
-from email.mime.text import MIMEText
-from datetime import datetime, timedelta
-
-
 # ========================
 # Load environment variables
 # ========================
@@ -136,17 +130,15 @@ async def register_user(user: User):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error registering user: {str(e)}")
 
-from datetime import datetime
-
 @app.post("/login", response_description="Login user")
 async def login_user(user: User):
-    """Authenticate a user, log their login time, and return data."""
+    """(FIXED) Authenticates a user and returns their data on success."""
     users_collection = app.mongodb["users"]
     db_user = await users_collection.find_one({"username": user.username, "password": user.password})
 
     if not db_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
-
+    
     user_role = db_user.get("role", "student")
     response_data = {
         "status": "success",
@@ -154,7 +146,7 @@ async def login_user(user: User):
         "role": user_role
     }
 
-    # If the user is a student, fetch their detailed data
+    # If the user is a student, fetch their detailed data to return to the app
     if user_role == "student":
         students_collection = app.mongodb["students"]
         student_details = await students_collection.find_one({"UserID": user.username})
@@ -162,18 +154,9 @@ async def login_user(user: User):
             student_details["_id"] = str(student_details["_id"])
             response_data["user_data"] = student_details
         else:
-            response_data["user_data"] = None
-
-    # ✅ Save login activity for monitoring
-    logins_collection = app.mongodb["logins"]
-    await logins_collection.insert_one({
-        "username": user.username,
-        "role": user_role,
-        "time": datetime.utcnow()
-    })
+            response_data["user_data"] = None # Student details not found
 
     return response_data
-
 
 @app.get("/users", response_description="List all users", response_model=List[UserOut])
 async def list_users():
@@ -237,88 +220,3 @@ async def add_academic_data(data: AcademicData):
         return {"status": "success", "message": "Academic data added successfully."}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error saving academic data: {str(e)}")
-
-
-# === NEW: Get Academic Data for a Student ===
-@app.get("/academics/{studentId}", response_description="Get academic data for a student")
-async def get_academic_data(studentId: str):
-    """Fetches all academic performance entries for a student by ID."""
-    academics_collection = app.mongodb["academics"]
-
-    cursor = academics_collection.find({"studentId": studentId})
-    results = []
-    async for record in cursor:
-        record["_id"] = str(record["_id"])  # Convert ObjectId to string
-        results.append(record)
-
-    if not results:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No academic data found for student {studentId}"
-        )
-
-    return {"status": "success", "data": results}
-
-        # ==========================
-# Additional Student Routes
-# ==========================
-
-from fastapi import Path
-
-# Get single student by ID
-@app.get("/student/{admission_no}")
-async def get_student_by_admission_no(admission_no: str):
-    students_collection = app.mongodb["students"]
-
-    # Strip spaces and match exactly
-    student = await students_collection.find_one({"Admission No": admission_no.strip()})
-    
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
-    
-    student.pop("_id", None)
-    return student
-
-
-
-# Update student details by Admission No
-@app.put("/student/{admission_no}")
-async def update_student_by_admission_no(admission_no: str, updated_data: dict):
-    students_collection = app.mongodb["students"]
-
-    result = await students_collection.update_one(
-        {"Admission No": admission_no.strip()},
-        {"$set": updated_data}
-    )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Student not found")
-
-    return {"status": "success", "message": "Student updated successfully"}
-
-# Delete student
-@app.delete("/student/{admission_no}")
-async def delete_student_by_admission_no(admission_no: str):
-    students_collection = app.mongodb["students"]
-
-    result = await students_collection.delete_one({"Admission No": admission_no.strip()})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Student not found")
-
-    return {"status": "success", "message": "Student deleted successfully"}
-
-
-@app.get("/monitor", response_description="Get last 10 logins")
-async def monitor():
-    """Return the last 10 login activities."""
-    logins_collection = app.mongodb["logins"]
-
-    cursor = logins_collection.find().sort("time", -1).limit(10)
-    last_logins = []
-    async for login in cursor:
-        last_logins.append({
-            "username": login["username"],
-            "role": login["role"],
-            "time": login["time"].strftime("%Y-%m-%d %H:%M:%S")
-        })
-
-    return {"last_logins": last_logins}

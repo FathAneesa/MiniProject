@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'login_page.dart';
-import 'edit_stud.dart';
-import 'delete_stud.dart';
+import 'login_page.dart'; // Provides apiBaseUrl
 
 class StoreStud extends StatefulWidget {
   const StoreStud({super.key});
@@ -19,78 +17,30 @@ class _StoreStudState extends State<StoreStud> {
   @override
   void initState() {
     super.initState();
-    _loadStudents();
-  }
-
-  void _loadStudents() {
-    setState(() {
-      _studentsFuture = _fetchStudents();
-    });
+    _studentsFuture = _fetchStudents();
   }
 
   Future<List<dynamic>> _fetchStudents() async {
     final url = Uri.parse('$apiBaseUrl/students');
     try {
-      final response =
-          await http.get(url, headers: {'Content-Type': 'application/json'});
+      final response = await http.get(url, headers: {'Content-Type': 'application/json'});
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception(
-            'Failed to load students. Status code: ${response.statusCode}');
+        throw Exception('Failed to load students. Status code: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Failed to load students: $e');
     }
   }
 
-  Future<void> _navigateToEdit() async {
-    bool? updated = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const EditStud()),
-    );
-    if (updated == true) {
-      _loadStudents();
-    }
-  }
-
-  Future<void> _navigateToDelete() async {
-    bool? deleted = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const DeleteStud()),
-    );
-    if (deleted == true) {
-      _loadStudents();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Hydrangea-inspired palette
-    final Color deepPurple = const Color(0xFF8A5EA8);
-    final Color lightLavender = const Color(0xFFE6D9F2);
-    final Color veryLightPink = const Color(0xFFF9F4FB);
-
     return Scaffold(
-      backgroundColor: veryLightPink,
       appBar: AppBar(
-        title: Text(
-          "Stored Student Details",
-          style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: deepPurple,
+        title: Text("Stored Student Details", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: Colors.blue,
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: _navigateToEdit,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.white),
-            onPressed: _navigateToDelete,
-          ),
-        ],
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _studentsFuture,
@@ -99,10 +49,7 @@ class _StoreStudState extends State<StoreStud> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Text("Error: ${snapshot.error}",
-                  style: const TextStyle(color: Colors.red)),
-            );
+            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text("No student data found."));
@@ -115,8 +62,7 @@ class _StoreStudState extends State<StoreStud> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingRowColor:
-                    WidgetStateProperty.all(lightLavender),
+                headingRowColor: WidgetStateProperty.all(Colors.blue.shade100),
                 columns: const [
                   DataColumn(label: Text("Student Name")),
                   DataColumn(label: Text("Admission No")),

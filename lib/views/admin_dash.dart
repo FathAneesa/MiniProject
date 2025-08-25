@@ -1,199 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'login_page.dart';
 import 'add_stud.dart';
 import 'store_stud.dart';
-import 'edit_stud.dart';
-import 'delete_stud.dart';
-import 'monitor.dart';
-
-// Hydrangea Palette
-const Color hydrangeaPink = Color(0xFFC75B93);
-const Color hydrangeaLightPink = Color(0xFFF7CFE0);
-const Color hydrangeaLavender = Color(0xFFA480CF);
-const Color hydrangeaLilac = Color(0xFFD6B4FC);
-const Color hydrangeaVeryLightLavender = Color(0xFFF4E1FF);
-const Color hydrangeaMauve = Color(0xFFB98BB0);
-const Color hydrangeaOrchid = Color(0xFF9B5D8F);
-const Color hydrangeaCoralAccent = Color(0xFFFF8FAB);
-const Color darkPlumText = Color(0xFF2E1A25);
-
-class DailyRecommendationPage extends StatelessWidget {
-  const DailyRecommendationPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Daily Recommendation")),
-      body: const Center(child: Text("Daily Recommendation Page")),
-    );
-  }
-}
-
-class WeeklyProgressPage extends StatelessWidget {
-  const WeeklyProgressPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Weekly Progress")),
-      body: const Center(child: Text("Weekly Progress Page")),
-    );
-  }
-}
+import 'login_page.dart'; // For Logout navigation
 
 class AdminDash extends StatelessWidget {
   const AdminDash({super.key});
 
   void _logout(BuildContext context) {
+    // Show logout confirmation dialog before navigating back
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text('Logout Confirmation',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to logout?',
-            style: GoogleFonts.poppins()),
+        title: Text('Logout Confirmation', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to logout?', style: GoogleFonts.poppins()),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel',
-                style: GoogleFonts.poppins(color: Colors.grey[700])),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.grey[700])),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: hydrangeaPink,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()));
+              Navigator.of(ctx).pop(); // close dialog
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
             },
-            child:
-                Text('Logout', style: GoogleFonts.poppins(color: Colors.white)),
+            child: Text('Logout', style: GoogleFonts.poppins(color: Colors.white)),
           ),
         ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        // 🌸 Lavender purple gradient background
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [hydrangeaLilac, hydrangeaLavender],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Admin Dashboard",
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Add Student
-                  buildDashboardButton(
-                    color: hydrangeaPink,
-                    text: "Add Student",
-                    context: context,
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const AddStud()));
-                    },
-                  ),
-                  const SizedBox(height: 15),
-
-                  // View Student Details
-                  buildDashboardButton(
-                    color: hydrangeaMauve,
-                    text: "View Student Details",
-                    context: context,
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const StoreStud()));
-                    },
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Edit Student Details
-                  buildDashboardButton(
-                    color: hydrangeaLavender,
-                    text: "Edit Student Details",
-                    context: context,
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const EditStud()));
-                    },
-                  ),
-                  const SizedBox(height: 15),
-
-                  // Delete Student
-                  buildDashboardButton(
-                    color: hydrangeaOrchid,
-                    text: "Delete Student",
-                    context: context,
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const DeleteStud()));
-                    },
-                  ),
-                 const SizedBox(height: 15),  // 🔹 Add spacing after Delete button
-
-// Monitor Data Flow
-buildDashboardButton(
-  color: hydrangeaPink,
-  text: "Monitor Data Flow",
-  context: context,
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const MonitorPage()), // ✅ navigate to monitor.dart
-    );
-  },
-),
-const SizedBox(height: 15),
-                  const SizedBox(height: 40),
-
-                  // Logout Button
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 50, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
-                    ),
-                    onPressed: () {
-                      _logout(context);
-                    },
-                    child: Text(
-                      "Logout",
-                      style: GoogleFonts.poppins(
-                          color: hydrangeaLavender,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -206,18 +45,113 @@ const SizedBox(height: 15),
   }) {
     return SizedBox(
       width: double.infinity,
+      height: 50,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         onPressed: onTap,
         child: Text(
           text,
           style: GoogleFonts.poppins(
-              fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple, Colors.pinkAccent],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // You can add your logo and welcome text here if you want
+
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildDashboardButton(
+                          color: Colors.blue.shade700,
+                          text: "Add Student",
+                          context: context,
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const AddStud()));
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        buildDashboardButton(
+                          color: Colors.orange.shade700,
+                          text: "View Student Details",
+                          context: context,
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const StoreStud()));
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        buildDashboardButton(
+                          color: Colors.teal.shade700,
+                          text: "Take Memory Focus Test",
+                          context: context,
+                          onTap: () {
+                            // TODO: Navigate to Memory Focus Test page
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        buildDashboardButton(
+                          color: Colors.indigo.shade700,
+                          text: "View Daily Recommendation",
+                          context: context,
+                          onTap: () {
+                            // TODO: Navigate to Daily Recommendation page
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        buildDashboardButton(
+                          color: Colors.purple.shade700,
+                          text: "View Weekly Progress",
+                          context: context,
+                          onTap: () {
+                            // TODO: Navigate to Weekly Progress page
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        buildDashboardButton(
+                          color: Colors.red.shade700,
+                          text: "Logout",
+                          context: context,
+                          onTap: () {
+                            _logout(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

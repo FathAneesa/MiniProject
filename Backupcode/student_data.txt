@@ -1,2 +1,0 @@
-// student_data.dart
-List<Map<String, String>> studentList = [];
