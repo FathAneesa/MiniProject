@@ -136,17 +136,27 @@ async def register_user(user: User):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error registering user: {str(e)}")
 
+<<<<<<< HEAD
 from datetime import datetime
 
 @app.post("/login", response_description="Login user")
 async def login_user(user: User):
     """Authenticate a user, log their login time, and return data."""
+=======
+@app.post("/login", response_description="Login user")
+async def login_user(user: User):
+    """(FIXED) Authenticates a user and returns their data on success."""
+>>>>>>> 4b8fd07349adb79b1dabd1b458fcf1d09f543ef5
     users_collection = app.mongodb["users"]
     db_user = await users_collection.find_one({"username": user.username, "password": user.password})
 
     if not db_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 4b8fd07349adb79b1dabd1b458fcf1d09f543ef5
     user_role = db_user.get("role", "student")
     response_data = {
         "status": "success",
@@ -154,7 +164,11 @@ async def login_user(user: User):
         "role": user_role
     }
 
+<<<<<<< HEAD
     # If the user is a student, fetch their detailed data
+=======
+    # If the user is a student, fetch their detailed data to return to the app
+>>>>>>> 4b8fd07349adb79b1dabd1b458fcf1d09f543ef5
     if user_role == "student":
         students_collection = app.mongodb["students"]
         student_details = await students_collection.find_one({"UserID": user.username})
@@ -162,6 +176,7 @@ async def login_user(user: User):
             student_details["_id"] = str(student_details["_id"])
             response_data["user_data"] = student_details
         else:
+<<<<<<< HEAD
             response_data["user_data"] = None
 
     # ✅ Save login activity for monitoring
@@ -175,6 +190,12 @@ async def login_user(user: User):
     return response_data
 
 
+=======
+            response_data["user_data"] = None # Student details not found
+
+    return response_data
+
+>>>>>>> 4b8fd07349adb79b1dabd1b458fcf1d09f543ef5
 @app.get("/users", response_description="List all users", response_model=List[UserOut])
 async def list_users():
     users_collection = app.mongodb["users"]
@@ -238,6 +259,7 @@ async def add_academic_data(data: AcademicData):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error saving academic data: {str(e)}")
 
+<<<<<<< HEAD
 
 # === NEW: Get Academic Data for a Student ===
 @app.get("/academics/{studentId}", response_description="Get academic data for a student")
@@ -259,6 +281,8 @@ async def get_academic_data(studentId: str):
 
     return {"status": "success", "data": results}
 
+=======
+>>>>>>> 4b8fd07349adb79b1dabd1b458fcf1d09f543ef5
         # ==========================
 # Additional Student Routes
 # ==========================
@@ -306,6 +330,7 @@ async def delete_student_by_admission_no(admission_no: str):
 
     return {"status": "success", "message": "Student deleted successfully"}
 
+<<<<<<< HEAD
 
 @app.get("/monitor", response_description="Get last 10 logins")
 async def monitor():
@@ -322,3 +347,5 @@ async def monitor():
         })
 
     return {"last_logins": last_logins}
+=======
+>>>>>>> 4b8fd07349adb79b1dabd1b458fcf1d09f543ef5
