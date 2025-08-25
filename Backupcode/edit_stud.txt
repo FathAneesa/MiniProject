@@ -1,0 +1,154 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'login_page.dart';
+
+class EditStud extends StatefulWidget {
+  const EditStud({super.key});
+
+  @override
+  State<EditStud> createState() => _EditStudState();
+}
+
+class _EditStudState extends State<EditStud> {
+  final _formKey = GlobalKey<FormState>();
+  final _admissionNoController = TextEditingController();
+
+  Map<String, dynamic>? _studentData;
+  bool _loading = false;
+  bool _searching = false;
+
+  Future<void> _searchStudent() async {
+    if (_admissionNoController.text.isEmpty) return;
+
+    setState(() {
+      _searching = true;
+    });
+
+    final url = Uri.parse('$apiBaseUrl/student/${_admissionNoController.text}');
+    final res = await http.get(url);
+
+    if (res.statusCode == 200) {
+      setState(() {
+        _studentData = jsonDecode(res.body);
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Student not found")),
+      );
+      setState(() {
+        _studentData = null;
+      });
+    }
+
+    setState(() {
+      _searching = false;
+    });
+  }
+
+ Future<void> _updateStudent() async {
+  if (_studentData == null) return;
+
+  setState(() => _loading = true);
+
+  final admissionNo = _studentData!["Admission No"];
+  final url = Uri.parse('$apiBaseUrl/student/$admissionNo');
+
+  final res = await http.put(
+    url,
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(_studentData),
+  );
+
+  setState(() => _loading = false);
+
+  if (res.statusCode == 200) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Student updated successfully")),
+    );
+    Navigator.pop(context, true); // Pass "true" back
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to update: ${res.body}")),
+    );
+  }
+}
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Edit Student", style: GoogleFonts.poppins(color: Colors.white)),
+        backgroundColor: Colors.blue,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _admissionNoController,
+              decoration: const InputDecoration(
+                labelText: "Enter Admission No",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _searching ? null : _searchStudent,
+              child: _searching ? const CircularProgressIndicator() : const Text("Search"),
+            ),
+            const Divider(),
+            _studentData != null
+                ? Expanded(
+                    child: Form(
+                      key: _formKey,
+                      child: ListView(
+                        children: _studentData!.keys
+                            .where((key) => key != "UserID" && key != "Admission No")
+                            .map((key) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: TextFormField(
+                              initialValue: _studentData![key]?.toString() ?? "",
+                              decoration: InputDecoration(
+                                labelText: key,
+                                border: const OutlineInputBorder(),
+                              ),
+                              onChanged: (val) => _studentData![key] = val,
+                            ),
+                          );
+                        }).toList()
+                          ..insert(
+                            0,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: TextFormField(
+                                enabled: false,
+                                initialValue: _studentData!["Admission No"] ?? "",
+                                decoration: const InputDecoration(
+                                  labelText: "Admission No",
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ),
+                    ),
+                  )
+                : const Text("Enter admission number to search."),
+            if (_studentData != null)
+              ElevatedButton(
+                onPressed: _loading ? null : _updateStudent,
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: _loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("Update"),
+              )
+          ],
+        ),
+      ),
+    );
+  }
+}
