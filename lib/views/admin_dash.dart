@@ -23,7 +23,7 @@ class AdminDash extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: const Color.fromARGB(255, 246, 127, 119),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
@@ -70,7 +70,7 @@ class AdminDash extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.pinkAccent],
+            colors: [Color.fromARGB(255, 213, 108, 240), Color.fromARGB(255, 240, 128, 166)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -88,7 +88,7 @@ class AdminDash extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         buildDashboardButton(
-                          color: Colors.blue.shade700,
+                          color: const Color.fromARGB(255, 58, 150, 242),
                           text: "Add Student",
                           context: context,
                           onTap: () {
@@ -98,7 +98,7 @@ class AdminDash extends StatelessWidget {
                         const SizedBox(height: 15),
 
                         buildDashboardButton(
-                          color: Colors.orange.shade700,
+                          color: const Color.fromARGB(255, 225, 142, 59),
                           text: "View Student Details",
                           context: context,
                           onTap: () {
@@ -108,8 +108,8 @@ class AdminDash extends StatelessWidget {
                         const SizedBox(height: 15),
 
                         buildDashboardButton(
-                          color: Colors.teal.shade700,
-                          text: "Take Memory Focus Test",
+                          color: const Color.fromARGB(255, 36, 225, 203),
+                          text: "Edit Student Details",
                           context: context,
                           onTap: () {
                             // TODO: Navigate to Memory Focus Test page
@@ -118,8 +118,8 @@ class AdminDash extends StatelessWidget {
                         const SizedBox(height: 15),
 
                         buildDashboardButton(
-                          color: Colors.indigo.shade700,
-                          text: "View Daily Recommendation",
+                          color: const Color.fromARGB(255, 203, 30, 212),
+                          text: "Delete Student",
                           context: context,
                           onTap: () {
                             // TODO: Navigate to Daily Recommendation page
@@ -128,8 +128,8 @@ class AdminDash extends StatelessWidget {
                         const SizedBox(height: 15),
 
                         buildDashboardButton(
-                          color: Colors.purple.shade700,
-                          text: "View Weekly Progress",
+                          color: const Color.fromARGB(255, 179, 71, 225),
+                          text: "View Weekly Analysis",
                           context: context,
                           onTap: () {
                             // TODO: Navigate to Weekly Progress page

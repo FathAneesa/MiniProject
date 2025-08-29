@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.deepPurpleAccent, Colors.pinkAccent],
+                colors: [Color.fromARGB(255, 227, 41, 178), Color.fromARGB(255, 228, 167, 187)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -128,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
           Center(
             child: SingleChildScrollView(
               child: Card(
-                color: Colors.deepPurple.shade100.withAlpha(217),
+                color: const Color.fromARGB(255, 235, 171, 222).withAlpha(217),
                 elevation: 10,
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 shape: RoundedRectangleBorder(
@@ -177,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: ElevatedButton(
                           onPressed: isLoading ? null : login,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
+                            backgroundColor: const Color.fromARGB(255, 79, 40, 60),
                             minimumSize: const Size.fromHeight(45),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

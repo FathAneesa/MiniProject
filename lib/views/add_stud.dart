@@ -35,124 +35,122 @@ class _AddStudState extends State<AddStud> {
   final List<String> departments = ['MCA', 'MBA'];
   final List<String> semesters = ['1', '2', '3', '4'];
   final List<String> genders = ['Male', 'Female', 'Other'];
+Future<void> _saveStudent() async {
+  if (_formKey.currentState!.validate()) {
+    setState(() {
+      _isLoading = true;
+    });
 
-  Future<void> _saveStudent() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    final studentData = {
+      "Student Name": _studentNameController.text.trim(),
+      "Admission No": _admissionNoController.text.trim(),
+      "Academic Year": _academicYearController.text.trim(),
+      "Phone": _phoneController.text.trim(),
+      "Email": _emailController.text.trim(),
+      "dob": _dobController.text.trim(),   // 👈 match backend key (lowercase)
+      "Father Name": _fatherNameController.text.trim(),
+      "Mother Name": _motherNameController.text.trim(),
+      "Address": _addressController.text.trim(),
+      "Parent Phone": _parentPhoneController.text.trim(),
+      "Guardian Name": _guardianNameController.text.trim(),
+      "Guardian Phone": _guardianPhoneController.text.trim(),
+      "Department": _selectedDepartment ?? '',
+      "Semester": _selectedSemester ?? '',
+      "Gender": _selectedGender ?? '',
+    };
 
-      String admissionNo = _admissionNoController.text.trim();
-      String parentPhone = _parentPhoneController.text.trim();
-      String userId = "STUD$admissionNo";
-      String password = "kmct@${parentPhone.substring(parentPhone.length - 4)}";
+    final url = Uri.parse('$apiBaseUrl/Students/add'); // 👈 backend route (case-sensitive!)
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(studentData),
+      );
 
-      final studentData = {
-        "Student Name": _studentNameController.text.trim(),
-        "Admission No": admissionNo,
-        "Academic Year": _academicYearController.text.trim(),
-        "Phone": _phoneController.text.trim(),
-        "Email": _emailController.text.trim(), // Added Email
-        "DOB": _dobController.text.trim(),
-        "Father Name": _fatherNameController.text.trim(),
-        "Mother Name": _motherNameController.text.trim(),
-        "Address": _addressController.text.trim(),
-        "Parent Phone": parentPhone,
-        "Guardian Name": _guardianNameController.text.trim(),
-        "Guardian Phone": _guardianPhoneController.text.trim(),
-        "Department": _selectedDepartment ?? '',
-        "Semester": _selectedSemester ?? '',
-        "Gender": _selectedGender ?? '',
-        "UserID": userId,
-        "Password": password,
-      };
+      if (!mounted) return;
 
-      final url = Uri.parse('$apiBaseUrl/students/add');
-      try {
-        final response = await http.post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(studentData),
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+
+        // ✅ Use backend-generated credentials
+        String username = data['username'];
+        String password = data['password'];
+
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 80),
+                const SizedBox(height: 10),
+                Text(
+                  "Student Saved Successfully!",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 15),
+                Text(
+                  "User ID: $username",
+                  style: GoogleFonts.poppins(fontSize: 16),
+                ),
+                Text(
+                  "Password: $password",
+                  style: GoogleFonts.poppins(fontSize: 16),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Go back to admin dash
+                  },
+                  child: const Text(
+                    "OK",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
-
-        if (!mounted) return;
-
-        if (response.statusCode == 201) {
-          // Successfully created
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 80),
-                  const SizedBox(height: 10),
-                  Text(
-                    "Student Saved Successfully!",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 15),
-                  Text(
-                    "User ID: $userId",
-                    style: GoogleFonts.poppins(fontSize: 16),
-                  ),
-                  Text(
-                    "Password: $password",
-                    style: GoogleFonts.poppins(fontSize: 16),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context); // Close dialog
-                      Navigator.pop(context); // Go back to admin dash
-                    },
-                    child: const Text(
-                      "OK",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        } else {
-          final error = jsonDecode(response.body);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                "Error: ${error['detail'] ?? 'Could not save student'}",
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } catch (e) {
-        if (!mounted) return;
+      } else {
+        final error = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Network Error: $e"),
+            content: Text(
+              "Error: ${error['detail'] ?? 'Could not save student'}",
+            ),
             backgroundColor: Colors.red,
           ),
         );
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Network Error: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
+}
+
 
   Widget _buildTextField(
     String label,
