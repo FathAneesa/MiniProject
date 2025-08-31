@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'add_academic.dart';
+import 'view_academic.dart';
 import 'login_page.dart'; // ✅ Added for logout navigation
 
 class StudDash extends StatelessWidget {
@@ -58,6 +59,23 @@ class StudDash extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(height: 30),
+
+            _buildButton(
+  context,
+  label: "View Academic Data",
+  color: const Color(0xFF6A5ACD),
+  icon: Icons.visibility, // 👁 better icon for view
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ViewAcademicPage(studentId: studentId), // ✅ Correct
+      ),
+    );
+  },
+),
+
             const SizedBox(height: 16),
 
             _buildButton(

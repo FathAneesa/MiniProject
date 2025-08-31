@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'view_subjects.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'login_page.dart'; // Provides apiBaseUrl
@@ -35,55 +34,46 @@ class _AddAcademicPageState extends State<AddAcademicPage> {
       }
     }
     setState(() {
-      overallMark = (count > 0) ? (total ~/ count) : 0; // Whole number avg
+      overallMark = (count > 0) ? (total ~/ count) : 0;
     });
   }
+Future<void> saveAcademicData() async {
+  try {
+    final url = Uri.parse("$apiBaseUrl/academics/add"); // ✅ fixed endpoint
 
-  Future<void> _confirmAcademicData() async {
-    setState(() {
-      _isConfirming = true;
-    });
+    final Map<String, dynamic> data = {
+      "studentId": widget.studentId, // ✅ backend expects studentId in body
+      "subjects": subjects,
+      "studyHours": studyHoursController.text,
+      "focusLevel": focusLevelController.text,
+      "overallMark": overallMark, 
+    };
 
-    final url = Uri.parse('$apiBaseUrl/academics/add');
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'studentId': widget.studentId,
-          'subjects': subjects,
-          'studyHours': studyHoursController.text,
-          'focusLevel': focusLevelController.text,
-          'overallMark': overallMark,
-        }),
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Academic data saved successfully!")),
       );
-
-      if (!mounted) return;
-
-      if (response.statusCode == 201) { // 201 Created
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Academic data saved successfully!'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context); // Go back after success
-      } else {
-         final error = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: ${error['detail'] ?? 'Unknown error'}'), backgroundColor: Colors.red),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Network Error: $e'), backgroundColor: Colors.red),
-        );
-    } finally {
-      if(mounted) {
-        setState(() {
-          _isConfirming = false;
-        });
-      }
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to Save: ${response.body}")),
+      );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error: $e")),
+    );
   }
+}
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +83,8 @@ class _AddAcademicPageState extends State<AddAcademicPage> {
         backgroundColor: Colors.blueAccent,
         title: Text(
           'Add Academic Data',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold, color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -205,7 +196,7 @@ class _AddAcademicPageState extends State<AddAcademicPage> {
             const SizedBox(height: 20),
             Text("Overall Marks",
                 style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
+                    fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -222,38 +213,32 @@ class _AddAcademicPageState extends State<AddAcademicPage> {
             ),
 
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              ViewSubjectsPage(subjects: subjects)),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12)),
-                  child: Text("View",
-                      style: GoogleFonts.poppins(color: Colors.white)),
-                ),
-                ElevatedButton(
-                  onPressed: _isConfirming ? null : _confirmAcademicData,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12)),
-                  child: _isConfirming
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3,))
-                      : Text("Confirm",
-                          style: GoogleFonts.poppins(color: Colors.white)),
-                ),
-              ],
-            ),
+            Center(
+  child: ElevatedButton(
+    onPressed: _isConfirming
+        ? null
+        : () async {
+            setState(() => _isConfirming = true);
+            await saveAcademicData();   // ✅ call the correct function
+            setState(() => _isConfirming = false);
+          },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.green,
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+    ),
+    child: _isConfirming
+        ? const SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 3,
+            ))
+        : Text("Confirm",
+            style: GoogleFonts.poppins(color: Colors.white)),
+  ),
+),
+
           ],
         ),
       ),

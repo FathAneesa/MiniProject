@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'add_stud.dart';
-import 'store_stud.dart';
+import 'view_stud.dart';
+import 'edit.dart';
+import 'delete.dart';
 import 'login_page.dart'; // For Logout navigation
 
 class AdminDash extends StatelessWidget {
@@ -14,23 +16,40 @@ class AdminDash extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text('Logout Confirmation', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to logout?', style: GoogleFonts.poppins()),
+        title: Text(
+          'Logout Confirmation',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to logout?',
+          style: GoogleFonts.poppins(),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.grey[700])),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(color: Colors.grey[700]),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color.fromARGB(255, 246, 127, 119),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               Navigator.of(ctx).pop(); // close dialog
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              );
             },
-            child: Text('Logout', style: GoogleFonts.poppins(color: Colors.white)),
+            child: Text(
+              'Logout',
+              style: GoogleFonts.poppins(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -70,7 +89,10 @@ class AdminDash extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 213, 108, 240), Color.fromARGB(255, 240, 128, 166)],
+            colors: [
+              Color.fromARGB(255, 213, 108, 240),
+              Color.fromARGB(255, 240, 128, 166),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -79,7 +101,6 @@ class AdminDash extends StatelessWidget {
           child: Column(
             children: [
               // You can add your logo and welcome text here if you want
-
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -92,7 +113,12 @@ class AdminDash extends StatelessWidget {
                           text: "Add Student",
                           context: context,
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const AddStud()));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AddStud(),
+                              ),
+                            );
                           },
                         ),
                         const SizedBox(height: 15),
@@ -102,19 +128,29 @@ class AdminDash extends StatelessWidget {
                           text: "View Student Details",
                           context: context,
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const StoreStud()));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ViewStud(),
+                              ),
+                            );
                           },
                         ),
                         const SizedBox(height: 15),
 
-                        buildDashboardButton(
-                          color: const Color.fromARGB(255, 36, 225, 203),
-                          text: "Edit Student Details",
-                          context: context,
-                          onTap: () {
-                            // TODO: Navigate to Memory Focus Test page
-                          },
-                        ),
+                       buildDashboardButton(
+  color: const Color.fromARGB(255, 36, 225, 203),
+  text: "Edit Student Details",
+  context: context,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const EditPage()), // ✅ no admissionNo yet
+    );
+  },
+),
+
+
                         const SizedBox(height: 15),
 
                         buildDashboardButton(
@@ -122,7 +158,10 @@ class AdminDash extends StatelessWidget {
                           text: "Delete Student",
                           context: context,
                           onTap: () {
-                            // TODO: Navigate to Daily Recommendation page
+                           Navigator.push(
+                            context,
+                              MaterialPageRoute(builder: (context) => DeleteStudentPage()),
+                           );
                           },
                         ),
                         const SizedBox(height: 15),

@@ -15,6 +15,10 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 
+from bson import ObjectId, json_util
+import json
+from fastapi.responses import JSONResponse
+
 
 # ========================
 # Load environment variables
@@ -215,16 +219,23 @@ async def add_student(student: dict):
         "password": password
     }
 
+@app.get("/students")
+async def list_students():
+    students_collection = app.mongodb["Students"]
 
-@app.get("/Students", response_description="List all Students", response_model=List[dict[str, Any]])
-async def list_Students():
-    """Fetches and returns a list of all Students."""
-    Students_collection = app.mongodb["Students"]
-    Students = []
-    async for s in Students_collection.find():
-        s["_id"] = str(s["_id"]) # Convert ObjectId to string for JSON
-        Students.append(s)
-    return Students
+    # Fetch all documents
+    students_cursor = students_collection.find()
+    students = []
+    async for s in students_cursor:
+        students.append(s)
+
+    # Serialize using bson.json_util
+    students_json = json.loads(json_util.dumps(students))
+
+    # Return as FastAPI JSONResponse
+    return JSONResponse(content=students_json)
+
+
 
 # === NEW: Academics Route ===
 @app.post("/academics/add", response_description="Add academic data for a student", status_code=status.HTTP_201_CREATED)
@@ -285,10 +296,16 @@ async def get_student_by_admission_no(admission_no: str):
 
 
 
-# Update student details by Admission No
 @app.put("/student/{admission_no}")
 async def update_student_by_admission_no(admission_no: str, updated_data: dict):
     Students_collection = app.mongodb["Students"]
+
+    # Fields that cannot be changed
+    immutable_fields = ["Admission No", "UserID", "Password"]
+
+    # Remove them if present in request
+    for field in immutable_fields:
+        updated_data.pop(field, None)
 
     result = await Students_collection.update_one(
         {"Admission No": admission_no.strip()},
@@ -298,6 +315,7 @@ async def update_student_by_admission_no(admission_no: str, updated_data: dict):
         raise HTTPException(status_code=404, detail="Student not found")
 
     return {"status": "success", "message": "Student updated successfully"}
+
 
 # Delete student
 @app.delete("/student/{admission_no}")
@@ -309,6 +327,7 @@ async def delete_student_by_admission_no(admission_no: str):
         raise HTTPException(status_code=404, detail="Student not found")
 
     return {"status": "success", "message": "Student deleted successfully"}
+
 
 
 @app.get("/monitor", response_description="Get last 10 logins")
