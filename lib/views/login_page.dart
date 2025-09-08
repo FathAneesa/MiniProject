@@ -7,10 +7,8 @@ import 'dart:convert';
 import 'dart:async'; // For TimeoutException
 import 'admin_dash.dart';
 import 'stud_dash.dart';
-import 'forgot.dart'; // Add this with other imports
-
-// Using 127.0.0.1 is best for local development.
-const String apiBaseUrl = 'http://192.168.29.37:8000';
+import 'forgot.dart';
+import '../config.dart'; // Import the centralized config
 
 
 class LoginPage extends StatefulWidget {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // 1. Import dotenv
 import 'views/login_page.dart'; // or your correct initial page
 
-void main() {
+Future<void> main() async { // 2. Make main async
+  await dotenv.load(fileName: ".env"); // 3. Load the .env file
   runApp(const MyApp());
 }
 

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-const String apiBaseUrl = "http://192.168.29.37:8000"; // Your LAN IP
+import '../config.dart'; // Import the centralized config
 
 class ViewStud extends StatefulWidget {
   const ViewStud({super.key});

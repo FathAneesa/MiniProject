@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'login_page.dart'; // contains apiBaseUrl
+import '../config.dart'; // contains apiBaseUrl
 
 class EditPage extends StatefulWidget {
   const EditPage({super.key});

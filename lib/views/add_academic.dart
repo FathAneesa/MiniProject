@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'login_page.dart'; // Provides apiBaseUrl
+import '../config.dart'; // Provides apiBaseUrl
 
 class AddAcademicPage extends StatefulWidget {
   final String studentId;
@@ -39,14 +39,14 @@ class _AddAcademicPageState extends State<AddAcademicPage> {
   }
 Future<void> saveAcademicData() async {
   try {
-    final url = Uri.parse("$apiBaseUrl/academics/add"); // ✅ fixed endpoint
+    final url = Uri.parse("$apiBaseUrl/academics/add");
 
     final Map<String, dynamic> data = {
-      "studentId": widget.studentId, // ✅ backend expects studentId in body
+      "studentId": widget.studentId,
       "subjects": subjects,
       "studyHours": studyHoursController.text,
       "focusLevel": focusLevelController.text,
-      "overallMark": overallMark, 
+      "overallMark": overallMark,
     };
 
     final response = await http.post(
@@ -55,9 +55,10 @@ Future<void> saveAcademicData() async {
       body: jsonEncode(data),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final responseData = jsonDecode(response.body);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Academic data saved successfully!")),
+        SnackBar(content: Text(responseData["message"] ?? "Saved!")),
       );
       Navigator.pop(context);
     } else {

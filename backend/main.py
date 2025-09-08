@@ -103,7 +103,7 @@ class StudentOut(BaseModel, extra=Extra.allow):
 
 class Subject(BaseModel):
     name: str
-    mark: str
+    mark: int
 
 class AcademicData(BaseModel):
     studentId: str
