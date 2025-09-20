@@ -25,98 +25,141 @@ class _ViewAcademicPageState extends State<ViewAcademicPage> {
     fetchAcademicData();
   }
 
-  Future<void> fetchAcademicData() async {
-    try {
-      final response = await http.get(
-        Uri.parse("$apiBaseUrl/academics/${widget.studentId}"),
-      );
+Future<void> fetchAcademicData() async {
+  try {
+    final response = await http.get(
+      Uri.parse("$apiBaseUrl/academics/latest/${widget.studentId}"),
+    );
 
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
 
-        if (decoded["status"] == "success" && decoded["data"].isNotEmpty) {
-          final firstEntry = decoded["data"][0];
+      if (decoded["status"] == "success" && decoded["data"] != null) {
+        final record = decoded["data"];
 
-          setState(() {
-            subjects = List<Map<String, dynamic>>.from(firstEntry["subjects"]);
-            focusLevel = firstEntry["focusLevel"]; // ✅ Extracted
-            studyHours = firstEntry["studyHours"]; // ✅ Extracted
-            isLoading = false;
-          });
-        } else {
-          setState(() {
-            subjects = [];
-            isLoading = false;
-          });
-        }
+        setState(() {
+          subjects = List<Map<String, dynamic>>.from(record["subjects"]);
+          focusLevel = int.tryParse(record["focusLevel"].toString());
+          studyHours = int.tryParse(record["studyHours"].toString());
+          isLoading = false;
+        });
       } else {
-        setState(() => isLoading = false);
+        setState(() {
+          subjects = [];
+          isLoading = false;
+        });
       }
-    } catch (e) {
+    } else {
       setState(() => isLoading = false);
     }
+  } catch (e) {
+    setState(() => isLoading = false);
+    debugPrint("❌ Error fetching academics: $e");
   }
+}
+
 
   Future<void> deleteSubject(int index) async {
-    setState(() {
-      subjects.removeAt(index);
-    });
-    // TODO: send delete request to backend
+  try {
+    final response = await http.delete(
+      Uri.parse("$apiBaseUrl/academics/${widget.studentId}/subjects/$index"),
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      if (decoded["status"] == "success") {
+        setState(() {
+          subjects.removeAt(index);
+        });
+      }
+    } else {
+      debugPrint("❌ Failed to delete subject: ${response.body}");
+    }
+  } catch (e) {
+    debugPrint("❌ Error deleting subject: $e");
   }
+}
 
-  Future<void> editSubject(int index) async {
-    final subject = subjects[index];
-    final nameController = TextEditingController(text: subject["name"]);
-    final markController =
-        TextEditingController(text: subject["mark"].toString());
 
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Edit Subject"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: "Subject Name"),
-            ),
-            TextField(
-              controller: markController,
-              decoration: const InputDecoration(labelText: "Marks"),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+Future<void> editSubject(int index) async {
+  final subject = subjects[index];
+  final nameController = TextEditingController(text: subject["name"]);
+  final markController = TextEditingController(text: subject["mark"].toString());
+
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Edit Subject"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: nameController,
+            decoration: const InputDecoration(labelText: "Subject Name"),
           ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                subjects[index] = {
-                  "name": nameController.text,
-                  "mark": int.tryParse(markController.text) ?? 0,
-                };
-              });
-              Navigator.pop(context);
-              // TODO: send update request to backend
-            },
-            child: const Text("Save"),
+          TextField(
+            controller: markController,
+            decoration: const InputDecoration(labelText: "Marks"),
+            keyboardType: TextInputType.number,
           ),
         ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final updatedSubject = {
+              "name": nameController.text,
+              "mark": int.tryParse(markController.text) ?? 0,
+            };
+
+            try {
+              // ✅ Send PUT request to backend
+              final response = await http.put(
+                Uri.parse("$apiBaseUrl/academics/${widget.studentId}/subjects/$index"),
+                headers: {"Content-Type": "application/json"},
+                body: json.encode(updatedSubject),
+              );
+
+              if (response.statusCode == 200) {
+                final decoded = json.decode(response.body);
+                if (decoded["status"] == "success") {
+                  // ✅ Update UI
+                  setState(() {
+                    subjects[index] = updatedSubject;
+                  });
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Subject updated successfully")),
+                  );
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Failed to update: ${response.body}")),
+                );
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error updating subject: $e")),
+              );
+            }
+          },
+          child: const Text("Save"),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.lightBlue[50],
+      backgroundColor: const Color.fromARGB(255, 221, 124, 224),
       appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color.fromARGB(255, 219, 32, 236),
         title: Text(
           'View Academic Data',
           style: GoogleFonts.poppins(
@@ -214,7 +257,7 @@ class _ViewAcademicPageState extends State<ViewAcademicPage> {
                                         style: GoogleFonts.poppins(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.green[800],
+                                          color: const Color.fromARGB(255, 65, 2, 63),
                                         ),
                                       ),
                                     ),

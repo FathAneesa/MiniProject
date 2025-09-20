@@ -107,7 +107,7 @@ Future<void> _saveStudent() async {
                 const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: const Color.fromARGB(255, 225, 238, 107),
                   ),
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
@@ -115,7 +115,7 @@ Future<void> _saveStudent() async {
                   },
                   child: const Text(
                     "OK",
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: Color.fromARGB(255, 234, 153, 153)),
                   ),
                 ),
               ],
@@ -205,13 +205,14 @@ Future<void> _saveStudent() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 223, 158, 241), // 👈 change color here
       appBar: AppBar(
         title: Text(
           "Add Student",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 247, 245, 245)),
         ),
-        backgroundColor: Colors.blue,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: const Color.fromARGB(208, 180, 37, 224),
+        iconTheme: const IconThemeData(color: Color.fromARGB(255, 49, 39, 2)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -287,7 +288,7 @@ Future<void> _saveStudent() async {
               Center(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: const Color.fromARGB(255, 82, 2, 94),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 30,
                       vertical: 12,
@@ -298,12 +299,12 @@ Future<void> _saveStudent() async {
                   ),
                   onPressed: _isLoading ? null : _saveStudent,
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const CircularProgressIndicator(color: Color.fromARGB(255, 241, 143, 78))
                       : Text(
                           "Save Student",
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: Colors.white,
+                            color: const Color.fromARGB(255, 243, 240, 240),
                           ),
                         ),
                 ),

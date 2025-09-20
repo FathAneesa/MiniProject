@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'add_academic.dart';
 import 'view_academic.dart';
 import 'login_page.dart'; // ✅ Added for logout navigation
+import 'memory_test.dart';
+
 
 class StudDash extends StatelessWidget {
   final Map<String, dynamic> studentData;
@@ -84,6 +86,11 @@ class StudDash extends StatelessWidget {
               color: const Color(0xFF28C78E),
               icon: Icons.psychology,
               onTap: () {
+                Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) => MemoryTestPage(studentId: studentId)),
+);
+
               },
             ),
             const SizedBox(height: 16),

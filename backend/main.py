@@ -240,19 +240,26 @@ async def list_students():
 # === NEW: Academics Route ===
 @app.post("/academics/add", response_description="Add academic data for a student", status_code=status.HTTP_201_CREATED)
 async def add_academic_data(data: AcademicData):
-    """Saves academic data for a specific student."""
     academics_collection = app.mongodb["academics"]
-    
-    Students_collection = app.mongodb["Students"]
-    if not await Students_collection.find_one({"UserID": data.studentId}):
-         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Student with ID {data.studentId} not found.")
+    students_collection = app.mongodb["Students"]
+
+    if not await students_collection.find_one({"UserID": data.studentId}):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Student with ID {data.studentId} not found."
+        )
 
     try:
-        await academics_collection.insert_one(data.dict())
+        doc = data.dict()
+        doc["createdAt"] = datetime.utcnow()   # ✅ timestamp
+        await academics_collection.insert_one(doc)
+
         return {"status": "success", "message": "Academic data added successfully."}
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error saving academic data: {str(e)}")
-
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error saving academic data: {str(e)}"
+        )
 
 # === NEW: Get Academic Data for a Student ===
 @app.get("/academics/{studentId}", response_description="Get academic data for a student")
@@ -273,6 +280,90 @@ async def get_academic_data(studentId: str):
         )
 
     return {"status": "success", "data": results}
+
+
+
+
+@app.get("/academics/latest/{studentId}", response_description="Get latest academic data for a student")
+async def get_latest_academic(studentId: str):
+    """Fetches the most recent academic performance entry for a student."""
+    academics_collection = app.mongodb["academics"]
+
+    record = await academics_collection.find_one(
+        {"studentId": studentId},
+        sort=[("createdAt", -1)]  # ✅ newest entry first
+    )
+
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No academic data found for student {studentId}"
+        )
+
+    record["_id"] = str(record["_id"])  # Convert ObjectId to string
+    return {"status": "success", "data": record}
+
+
+from fastapi import Body
+
+# === Update a subject inside latest academic record ===
+@app.put("/academics/{studentId}/subjects/{index}", response_description="Update a subject")
+async def update_subject(studentId: str, index: int, updated_subject: Subject = Body(...)):
+    academics_collection = app.mongodb["academics"]
+
+    # Find latest academic record
+    record = await academics_collection.find_one(
+        {"studentId": studentId},
+        sort=[("createdAt", -1)]
+    )
+
+    if not record:
+        raise HTTPException(status_code=404, detail="No academic data found")
+
+    subjects = record.get("subjects", [])
+    if index < 0 or index >= len(subjects):
+        raise HTTPException(status_code=400, detail="Invalid subject index")
+
+    # Update subject
+    subjects[index] = updated_subject.dict()
+
+    await academics_collection.update_one(
+        {"_id": record["_id"]},
+        {"$set": {"subjects": subjects}}
+    )
+
+    return {"status": "success", "message": "Subject updated successfully"}
+
+
+# === Delete a subject inside latest academic record ===
+@app.delete("/academics/{studentId}/subjects/{index}", response_description="Delete a subject")
+async def delete_subject(studentId: str, index: int):
+    academics_collection = app.mongodb["academics"]
+
+    # Find latest academic record
+    record = await academics_collection.find_one(
+        {"studentId": studentId},
+        sort=[("createdAt", -1)]
+    )
+
+    if not record:
+        raise HTTPException(status_code=404, detail="No academic data found")
+
+    subjects = record.get("subjects", [])
+    if index < 0 or index >= len(subjects):
+        raise HTTPException(status_code=400, detail="Invalid subject index")
+
+    # Remove subject
+    subjects.pop(index)
+
+    await academics_collection.update_one(
+        {"_id": record["_id"]},
+        {"$set": {"subjects": subjects}}
+    )
+
+    return {"status": "success", "message": "Subject deleted successfully"}
+
+
 
         # ==========================
 # Additional Student Routes
