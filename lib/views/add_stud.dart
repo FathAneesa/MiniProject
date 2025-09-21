@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config.dart'; // Import for apiBaseUrl
+import '../theme/app_theme.dart';
+import '../theme/theme_helpers.dart';
 
 class AddStud extends StatefulWidget {
   const AddStud({super.key});
@@ -85,12 +87,17 @@ Future<void> _saveStudent() async {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.check_circle, color: Colors.green, size: 80),
-                const SizedBox(height: 10),
+                ThemeHelpers.themedAvatar(
+                  size: 80,
+                  icon: Icons.check_circle,
+                  gradient: LinearGradient(
+                    colors: [AppTheme.successColor, AppTheme.successColor.withOpacity(0.7)],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Text(
                   "Student Saved Successfully!",
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
@@ -98,25 +105,19 @@ Future<void> _saveStudent() async {
                 const SizedBox(height: 15),
                 Text(
                   "User ID: $username",
-                  style: GoogleFonts.poppins(fontSize: 16),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
                   "Password: $password",
-                  style: GoogleFonts.poppins(fontSize: 16),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 225, 238, 107),
-                  ),
+                ThemeHelpers.themedButton(
+                  text: "OK",
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
                     Navigator.pop(context); // Go back to admin dash
                   },
-                  child: const Text(
-                    "OK",
-                    style: TextStyle(color: Color.fromARGB(255, 234, 153, 153)),
-                  ),
                 ),
               ],
             ),
@@ -124,22 +125,18 @@ Future<void> _saveStudent() async {
         );
       } else {
         final error = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Error: ${error['detail'] ?? 'Could not save student'}",
-            ),
-            backgroundColor: Colors.red,
-          ),
+        ThemeHelpers.showThemedSnackBar(
+          context,
+          message: "Error: ${error['detail'] ?? 'Could not save student'}",
+          isError: true,
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Network Error: $e"),
-          backgroundColor: Colors.red,
-        ),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: "Network Error: $e",
+        isError: true,
       );
     } finally {
       if (mounted) {
@@ -205,22 +202,30 @@ Future<void> _saveStudent() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 223, 158, 241), // 👈 change color here
       appBar: AppBar(
-        title: Text(
-          "Add Student",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 247, 245, 245)),
+        title: Row(
+          children: [
+            ThemeHelpers.themedAvatar(
+              size: 40,
+              icon: Icons.person_add_outlined, // Add student icon
+            ),
+            const SizedBox(width: 12),
+            Text(
+              "Add Student",
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ],
         ),
-        backgroundColor: const Color.fromARGB(208, 180, 37, 224),
-        iconTheme: const IconThemeData(color: Color.fromARGB(255, 49, 39, 2)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: ThemeHelpers.gradientBackground(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: ThemeHelpers.themedCard(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               _buildTextField(
                 "Institution Name",
                 TextEditingController(text: "KMCT School of Business"),
@@ -286,30 +291,27 @@ Future<void> _saveStudent() async {
               ),
               const SizedBox(height: 20),
               Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 82, 2, 94),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 30,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: _isLoading ? null : _saveStudent,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Color.fromARGB(255, 241, 143, 78))
-                      : Text(
-                          "Save Student",
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: const Color.fromARGB(255, 243, 240, 240),
-                          ),
+                child: ThemeHelpers.themedButton(
+                  text: "Save Student",
+                  onPressed: _isLoading ? () {} : _saveStudent,
+                  style: _isLoading 
+                    ? AppButtonStyles.primaryButton.copyWith(
+                        backgroundColor: MaterialStateProperty.all(
+                          AppTheme.primaryColor.withOpacity(0.6)
                         ),
+                      ) 
+                    : AppButtonStyles.primaryButton,
                 ),
               ),
-            ],
+              if (_isLoading) ...[
+                const SizedBox(height: 16),
+                Center(
+                  child: ThemedWidgets.loadingIndicator(message: 'Saving student...'),
+                ),
+              ],
+                ],
+              ),
+            ),
           ),
         ),
       ),

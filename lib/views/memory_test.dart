@@ -376,25 +376,25 @@ List<String> _options = [];
 bool _showWords = true;
 
 Widget _wordRecallGame() {
+  // Initialize words to remember
   if (_shownWords.isEmpty) {
     _shownWords = (_words..shuffle()).take(5).toList();
     _showWords = true;
 
     Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) {
-        setState(() {
-          _showWords = false;
+      if (!mounted) return;
+      setState(() {
+        _showWords = false;
 
-          // Include at least one correct word
-          List<String> wrongWords = _words
-              .where((w) => !_shownWords.contains(w))
-              .toList()
+        // Include at least one correct word
+        List<String> wrongWords = _words
+            .where((w) => !_shownWords.contains(w))
+            .toList()
               ..shuffle();
 
-          // Mix 1 correct + 3 wrong words
-          _options = (_shownWords.take(1).toList() + wrongWords.take(3).toList())..shuffle();
-        });
-      }
+        // Mix 1 correct + 3 wrong words
+        _options = (_shownWords.take(1).toList() + wrongWords.take(3).toList())..shuffle();
+      });
     });
   }
 
@@ -408,6 +408,7 @@ Widget _wordRecallGame() {
       ),
       const SizedBox(height: 10),
 
+      // Show words to remember
       if (_showWords)
         Wrap(
           spacing: 8,
@@ -419,6 +420,7 @@ Widget _wordRecallGame() {
               .toList(),
         ),
 
+      // Show options after words disappear
       if (!_showWords)
         Column(
           children: [
@@ -433,27 +435,13 @@ Widget _wordRecallGame() {
               children: _options
                   .map((word) => ElevatedButton(
                         onPressed: () {
-                          // Show if user is correct or incorrect
-                          bool correct = _shownWords.contains(word);
-                          showDialog(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: Text(correct ? "Correct!" : "Incorrect!"),
-                              content: Text(
-                                  "The word you selected is ${correct ? "correct" : "not in the list"}"),
-                              actions: [
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      if (correct) _score++; // Award point
-                                      _shownWords = [];
-                                      _options = [];
-                                      _nextGame();
-                                    },
-                                    child: const Text("OK"))
-                              ],
-                            ),
-                          );
+                          // Award 1 point if the user selects a correct word
+                          if (_shownWords.contains(word)) _score++;
+                          
+                          // Reset and move to next game
+                          _shownWords = [];
+                          _options = [];
+                          _nextGame();
                         },
                         child: Text(word),
                       ))
@@ -464,6 +452,7 @@ Widget _wordRecallGame() {
     ],
   );
 }
+
 
 
 
@@ -550,17 +539,19 @@ Widget _missingTileGame() {
   );
 }
 
+
+
   // -------------------- GAME 9: Number Tap --------------------
 List<int>? _numberSequence;
-int _nextNumber = 0;
-int _tapCount = 0;
+int _nextNumber = 1;
+int _tappedCount = 0;
 bool _numberGameAnswered = false;
 
 Widget _numberTapGame() {
   if (_numberSequence == null) {
-    _numberSequence = List.generate(5, (i) => i + 1)..shuffle(); // 5 numbers
-    _nextNumber = _numberSequence!.reduce(min); // smallest number
-    _tapCount = 0;
+    _numberSequence = List.generate(5, (i) => i + 1)..shuffle(); // 5 numbers only
+    _nextNumber = 1;
+    _tappedCount = 0;
     _numberGameAnswered = false;
   }
 
@@ -570,7 +561,6 @@ Widget _numberTapGame() {
       const Text(
         "Number Tap: Tap numbers in ascending order!",
         style: TextStyle(color: Colors.white, fontSize: 16),
-        textAlign: TextAlign.center,
       ),
       const SizedBox(height: 10),
       Wrap(
@@ -579,20 +569,39 @@ Widget _numberTapGame() {
         children: _numberSequence!.map((n) {
           return ElevatedButton(
             style: ElevatedButton.styleFrom(minimumSize: const Size(50, 50)),
-            onPressed: _numberGameAnswered ? null : () {
-              if (n == _nextNumber) _tapCount++; // correct tap count
-              if (_tapCount == _numberSequence!.length) {
-                // End of game
-                _numberGameAnswered = true;
-                if (_tapCount == _numberSequence!.length) _score++; // full correct
-                Future.delayed(const Duration(milliseconds: 500), () => _nextGame());
-              } else {
-                // next smallest number
-                _nextNumber = _numberSequence!
-                    .where((num) => num > _nextNumber)
-                    .fold(_nextNumber, (prev, curr) => min(prev, curr));
-              }
-            },
+            onPressed: _numberGameAnswered
+                ? null
+                : () {
+                    if (!mounted) return; // mounted check
+
+                    if (n == _nextNumber) {
+                      _tappedCount++;
+                      _nextNumber++; // move to next number
+                    } else {
+                      _numberGameAnswered = true; // wrong tap ends game
+                    }
+
+                    // Check if game finished
+                    if (_tappedCount == _numberSequence!.length) {
+                      // all numbers correct
+                      _numberGameAnswered = true;
+                      _score++;
+                      _numberSequence = null;
+                      Future.delayed(const Duration(milliseconds: 300), () {
+                        if (!mounted) return;
+                        _nextGame();
+                      });
+                    } else if (_numberGameAnswered) {
+                      // wrong tap ends game without point
+                      _numberSequence = null;
+                      Future.delayed(const Duration(milliseconds: 300), () {
+                        if (!mounted) return;
+                        _nextGame();
+                      });
+                    }
+
+                    setState(() {});
+                  },
             child: Text("$n"),
           );
         }).toList(),
@@ -600,6 +609,8 @@ Widget _numberTapGame() {
     ],
   );
 }
+
+
 
 
 

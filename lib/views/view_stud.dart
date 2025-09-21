@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config.dart'; // Import the centralized config
+import '../theme/app_theme.dart';
+import '../theme/theme_helpers.dart';
 
 class ViewStud extends StatefulWidget {
   const ViewStud({super.key});
@@ -38,29 +40,39 @@ class _ViewStudState extends State<ViewStud> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Student Details",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+        title: Row(
+          children: [
+            ThemeHelpers.themedAvatar(
+              size: 40,
+              icon: Icons.people_outline, // View students icon
+            ),
+            const SizedBox(width: 12),
+            Text(
+              "Student Details",
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ],
         ),
-        backgroundColor: Colors.blue,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _studentsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: ThemedWidgets.loadingIndicator(message: 'Loading students...'));
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                "Error: ${snapshot.error}",
-                style: const TextStyle(color: Colors.red),
-              ),
+            return ThemedWidgets.emptyState(
+              title: "Error Loading Students",
+              subtitle: "${snapshot.error}",
+              icon: Icons.error_outline,
             );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No student data found."));
+            return ThemedWidgets.emptyState(
+              title: "No Students Found",
+              subtitle: "No student data available.",
+              icon: Icons.people_outline,
+            );
           }
 
           final students = snapshot.data!;

@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config.dart'; // Provides apiBaseUrl
+import '../theme/app_theme.dart';
+import '../theme/theme_helpers.dart';
 
 class AddAcademicPage extends StatefulWidget {
   final String studentId;
@@ -79,15 +81,20 @@ Future<void> saveAcademicData() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.lightBlue[50],
       appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
-        title: Text(
-          'Add Academic Data',
-          style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold, color: Colors.white),
+        title: Row(
+          children: [
+            ThemeHelpers.themedAvatar(
+              size: 40,
+              icon: Icons.school_outlined, // Academic/education icon
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Add Academic Data',
+              style: Theme.of(context).appBarTheme.titleTextStyle,
+            ),
+          ],
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

@@ -6,100 +6,58 @@ import 'view_stud.dart';
 import 'edit.dart';
 import 'delete.dart';
 import 'login_page.dart'; // For Logout navigation
+import '../theme/app_theme.dart';
+import '../theme/theme_helpers.dart';
 
 class AdminDash extends StatelessWidget {
   const AdminDash({super.key});
 
   void _logout(BuildContext context) {
     // Show logout confirmation dialog before navigating back
-    showDialog(
+    ThemeHelpers.showThemedDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          'Logout Confirmation',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'Are you sure you want to logout?',
-          style: GoogleFonts.poppins(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.poppins(color: Colors.grey[700]),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 246, 127, 119),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop(); // close dialog
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
-            },
-            child: Text(
-              'Logout',
-              style: GoogleFonts.poppins(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+      title: 'Logout Confirmation',
+      content: 'Are you sure you want to logout?',
+      cancelText: 'Cancel',
+      confirmText: 'Logout',
+      onConfirm: () {
+        Navigator.of(context).pop(); // close dialog
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      },
     );
   }
 
-  Widget buildDashboardButton({
-    required Color color,
-    required String text,
-    required BuildContext context,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        onPressed: onTap,
-        child: Text(
-          text,
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 213, 108, 240),
-              Color.fromARGB(255, 240, 128, 166),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+      body: ThemeHelpers.dashboardBackground(
         child: SafeArea(
           child: Column(
             children: [
+              // Admin header with themed avatar
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  children: [
+                    ThemeHelpers.themedAvatar(
+                      size: 100,
+                      icon: Icons.admin_panel_settings, // Admin icon
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Admin Dashboard',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textOnPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               // You can add your logo and welcome text here if you want
               Expanded(
                 child: Padding(
@@ -108,11 +66,10 @@ class AdminDash extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        buildDashboardButton(
-                          color: const Color.fromARGB(255, 58, 150, 242),
+                        ThemeHelpers.dashboardButton(
                           text: "Add Student",
-                          context: context,
-                          onTap: () {
+                          backgroundColor: AppTheme.accentBlue,
+                          onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -123,11 +80,10 @@ class AdminDash extends StatelessWidget {
                         ),
                         const SizedBox(height: 15),
 
-                        buildDashboardButton(
-                          color: const Color.fromARGB(255, 225, 142, 59),
+                        ThemeHelpers.dashboardButton(
                           text: "View Student Details",
-                          context: context,
-                          onTap: () {
+                          backgroundColor: AppTheme.accentOrange,
+                          onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -138,49 +94,43 @@ class AdminDash extends StatelessWidget {
                         ),
                         const SizedBox(height: 15),
 
-                       buildDashboardButton(
-  color: const Color.fromARGB(255, 36, 225, 203),
-  text: "Edit Student Details",
-  context: context,
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const EditPage()), // ✅ no admissionNo yet
-    );
-  },
-),
-
-
-                        const SizedBox(height: 15),
-
-                        buildDashboardButton(
-                          color: const Color.fromARGB(255, 203, 30, 212),
-                          text: "Delete Student",
-                          context: context,
-                          onTap: () {
-                           Navigator.push(
-                            context,
-                              MaterialPageRoute(builder: (context) => DeleteStudentPage()),
-                           );
+                        ThemeHelpers.dashboardButton(
+                          text: "Edit Student Details",
+                          backgroundColor: AppTheme.accentTeal,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const EditPage()),
+                            );
                           },
                         ),
                         const SizedBox(height: 15),
 
-                        buildDashboardButton(
-                          color: const Color.fromARGB(255, 179, 71, 225),
+                        ThemeHelpers.dashboardButton(
+                          text: "Delete Student",
+                          backgroundColor: AppTheme.accentPurple,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => DeleteStudentPage()),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        ThemeHelpers.dashboardButton(
                           text: "View Weekly Analysis",
-                          context: context,
-                          onTap: () {
+                          backgroundColor: AppTheme.accentViolet,
+                          onPressed: () {
                             // TODO: Navigate to Weekly Progress page
                           },
                         ),
                         const SizedBox(height: 15),
 
-                        buildDashboardButton(
-                          color: Colors.red.shade700,
+                        ThemeHelpers.dashboardButton(
                           text: "Logout",
-                          context: context,
-                          onTap: () {
+                          backgroundColor: AppTheme.errorColor,
+                          onPressed: () {
                             _logout(context);
                           },
                         ),

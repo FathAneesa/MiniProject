@@ -9,6 +9,8 @@ import 'admin_dash.dart';
 import 'stud_dash.dart';
 import 'forgot.dart';
 import '../config.dart'; // Import the centralized config
+import '../theme/app_theme.dart'; // Import theme
+import '../theme/theme_helpers.dart'; // Import theme helpers
 
 
 class LoginPage extends StatefulWidget {
@@ -29,8 +31,10 @@ class _LoginPageState extends State<LoginPage> {
     final password = passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter username and password')),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: 'Please enter username and password',
+        isError: true,
       );
       return;
     }
@@ -56,11 +60,10 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode == 200) {
         if (data['status'] == 'success') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful!'),
-              backgroundColor: Colors.green,
-            ),
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: 'Login successful!',
+            backgroundColor: AppTheme.successColor,
           );
 
           // (MODIFIED) Check if 'role' key exists and is 'admin'.
@@ -82,51 +85,45 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               );
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Could not retrieve student details.'),
-                  backgroundColor: Colors.red,
-                ),
+              ThemeHelpers.showThemedSnackBar(
+                context,
+                message: 'Could not retrieve student details.',
+                isError: true,
               );
             }
           }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(data['message'] ?? 'Login failed'),
-              backgroundColor: Colors.red,
-            ),
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: data['message'] ?? 'Login failed',
+            isError: true,
           );
         }
       } else {
         // Handle backend error responses (like 401 Unauthorized).
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['detail'] ?? 'Error during login'),
-            backgroundColor: Colors.red,
-          ),
+        ThemeHelpers.showThemedSnackBar(
+          context,
+          message: data['detail'] ?? 'Error during login',
+          isError: true,
         );
       }
     } on http.ClientException {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot connect to server. Is it running?'),
-          backgroundColor: Colors.red,
-        ),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: 'Cannot connect to server. Is it running?',
+        isError: true,
       );
     } on TimeoutException {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connection timed out. Please check your network.'),
-          backgroundColor: Colors.red,
-        ),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: 'Connection timed out. Please check your network.',
+        isError: true,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An unexpected error occurred: $e'),
-          backgroundColor: Colors.red,
-        ),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: 'An unexpected error occurred: $e',
+        isError: true,
       );
     } finally {
       if (mounted) {
@@ -143,120 +140,67 @@ class _LoginPageState extends State<LoginPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 227, 41, 178),
-                  Color.fromARGB(255, 228, 167, 187),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
+          ThemeHelpers.gradientBackground(
+            child: const SizedBox.expand(),
           ),
           Center(
             child: SingleChildScrollView(
-              child: Card(
-                color: const Color.fromARGB(255, 235, 171, 222).withAlpha(217),
-                elevation: 10,
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        height: 80,
-                        child: Image.asset(
-                          'assets/logo.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'WELLNESS AND PERFORMANCE\nRECOMMENDATION SYSTEM',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      TextField(
-                        controller: usernameController,
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          border: const OutlineInputBorder(),
-                          labelStyle: GoogleFonts.poppins(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          border: const OutlineInputBorder(),
-                          labelStyle: GoogleFonts.poppins(),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: isLoading ? null : login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(
-                              255,
-                              79,
-                              40,
-                              60,
-                            ),
-                            minimumSize: const Size.fromHeight(45),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+              child: ThemeHelpers.themedCard(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ThemeHelpers.themedAvatar(
+                      size: 100,
+                      icon: Icons.account_circle_outlined, // User/login icon
+                    ),
+                    const SizedBox(height: 16),
+                    ThemedWidgets.appTitle(),
+                    const SizedBox(height: 24),
+                    ThemeHelpers.themedTextField(
+                      controller: usernameController,
+                      labelText: 'Username',
+                    ),
+                    const SizedBox(height: 16),
+                    ThemeHelpers.themedTextField(
+                      controller: passwordController,
+                      labelText: 'Password',
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: 24),
+                    ThemeHelpers.themedButton(
+                      text: 'Login',
+                      onPressed: isLoading ? () {} : login,
+                      style: isLoading ? 
+                        AppButtonStyles.primaryButton.copyWith(
+                          backgroundColor: MaterialStateProperty.all(
+                            AppTheme.primaryColor.withOpacity(0.6)
                           ),
-                          child: isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : Text(
-                                  'Login',
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ),
-                      ),
+                        ) : AppButtonStyles.primaryButton,
+                    ),
+                    if (isLoading) ...[
                       const SizedBox(height: 16),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ForgotPasswordPage(),
-                            ),
-                          );
-                        },
-
-                        child: Text(
-                          'Forgot password? Click here.',
-                          style: GoogleFonts.poppins(
-                            color: Colors.deepPurple,
-                            decoration: TextDecoration.underline,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                      ThemedWidgets.loadingIndicator(message: 'Logging in...'),
                     ],
-                  ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordPage(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Forgot password? Click here.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.primaryColor,
+                          decoration: TextDecoration.underline,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

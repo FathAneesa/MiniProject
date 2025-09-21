@@ -4,6 +4,9 @@ import 'add_academic.dart';
 import 'view_academic.dart';
 import 'login_page.dart'; // ✅ Added for logout navigation
 import 'memory_test.dart';
+import 'rec.dart'; // Import the recommendations page
+import '../theme/app_theme.dart';
+import '../theme/theme_helpers.dart';
 
 
 class StudDash extends StatelessWidget {
@@ -18,171 +21,126 @@ class StudDash extends StatelessWidget {
     final String studentId = studentData['UserID'] ?? "";
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFD6D6F7), Color(0xFFB8A6F8)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.white,
-              child: Image.asset('assets/logo.png', width: 60),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              "Welcome, $studentName", // Personalized welcome message
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
-
-            _buildButton(
-              context,
-              label: "Add Academic Data",
-              color: const Color(0xFF6A5ACD),
-              icon: Icons.add,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddAcademicPage(studentId: studentId),
+      body: ThemeHelpers.dashboardBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: Column(
+              children: [
+                // Themed circular avatar with wellness icon
+                // Available icon options:
+                // Icons.psychology_outlined - Brain/mind (current)
+                // Icons.favorite - Heart/health
+                // Icons.spa - Wellness/relaxation
+                // Icons.self_improvement - Personal growth
+                // Icons.health_and_safety - Health focus
+                // Icons.emoji_objects - Ideas/learning
+                // Icons.fitness_center - Physical wellness
+                ThemeHelpers.themedAvatar(
+                  size: 120,
+                  icon: Icons.psychology_outlined, // Brain/wellness icon
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Welcome, $studentName", // Personalized welcome message
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 30),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 30),
 
-            _buildButton(
-  context,
-  label: "View Academic Data",
-  color: const Color(0xFF6A5ACD),
-  icon: Icons.visibility, // 👁 better icon for view
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ViewAcademicPage(studentId: studentId), // ✅ Correct
-      ),
-    );
-  },
-),
-
-            const SizedBox(height: 16),
-
-            _buildButton(
-              context,
-              label: "Take Memory/Focus Test",
-              color: const Color(0xFF28C78E),
-              icon: Icons.psychology,
-              onTap: () {
-                Navigator.push(
-  context,
-  MaterialPageRoute(builder: (context) => MemoryTestPage(studentId: studentId)),
-);
-
-              },
-            ),
-            const SizedBox(height: 16),
-
-            _buildButton(
-              context,
-              label: "View Daily Recommendation",
-              color: const Color(0xFF9370DB),
-              icon: Icons.star,
-              onTap: () {
-              },
-            ),
-            const SizedBox(height: 16),
-
-            _buildButton(
-              context,
-              label: "View Weekly Progress",
-              color: const Color(0xFFF06292),
-              icon: Icons.bar_chart,
-              onTap: () {
-              },
-            ),
-            const SizedBox(height: 16),
-
-            _buildButton(
-              context,
-              label: "Logout",
-              color: const Color(0xFFE57373),
-              icon: Icons.logout,
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text("Logout"),
-                      content: const Text("Are you sure you want to logout?"),
-                      actions: [
-                        TextButton(
-                          child: const Text("Cancel"),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        TextButton(
-                          child: const Text("Logout"),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginPage(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                ThemeHelpers.dashboardButton(
+                  text: "Add Academic Data",
+                  backgroundColor: AppTheme.accentBlue,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddAcademicPage(studentId: studentId),
+                      ),
                     );
                   },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+                ),
+                const SizedBox(height: 15),
 
-  Widget _buildButton(
-    BuildContext context, {
-    required String label,
-    required Color color,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, color: Colors.white),
-        label: Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+                ThemeHelpers.dashboardButton(
+                  text: "View Academic Data",
+                  backgroundColor: AppTheme.accentOrange,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ViewAcademicPage(studentId: studentId),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "Take Memory/Focus Test",
+                  backgroundColor: AppTheme.accentTeal,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MemoryTestPage(studentId: studentId)),
+                    );
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "View Daily Recommendation",
+                  backgroundColor: AppTheme.accentViolet,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RecommendationPage(
+                          studentId: studentId,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "View Weekly Progress",
+                  backgroundColor: AppTheme.accentPurple,
+                  onPressed: () {
+                    // TODO: Implement weekly progress
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "Logout",
+                  backgroundColor: AppTheme.errorColor,
+                  onPressed: () {
+                    ThemeHelpers.showThemedDialog(
+                      context: context,
+                      title: "Logout",
+                      content: "Are you sure you want to logout?",
+                      cancelText: "Cancel",
+                      confirmText: "Logout",
+                      onConfirm: () {
+                        Navigator.of(context).pop();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 4,
         ),
       ),
     );

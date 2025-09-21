@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config.dart'; // contains apiBaseUrl
+import '../theme/app_theme.dart';
+import '../theme/theme_helpers.dart';
 
 class EditPage extends StatefulWidget {
   const EditPage({super.key});
@@ -19,8 +21,10 @@ class _EditPageState extends State<EditPage> {
   // 🔹 Fetch student by Admission No
   Future<void> fetchStudent() async {
     if (_admissionNoController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Enter Admission No")),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: "Enter Admission No",
+        isError: true,
       );
       return;
     }
@@ -36,8 +40,10 @@ class _EditPageState extends State<EditPage> {
         studentData = json.decode(response.body);
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Student not found")),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: "Student not found",
+        isError: true,
       );
     }
 
@@ -73,13 +79,17 @@ class _EditPageState extends State<EditPage> {
     );
 
     if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Student updated successfully")),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: "Student updated successfully",
+        backgroundColor: AppTheme.successColor,
       );
       Navigator.pop(context); // go back after update
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to update student")),
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: "Failed to update student",
+        isError: true,
       );
     }
   }
@@ -107,84 +117,75 @@ class _EditPageState extends State<EditPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.lightBlue[100],
       appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
-        title: Text("Edit Student", style: GoogleFonts.poppins(fontSize: 20)),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+        title: Row(
           children: [
-            // Step 1: Admission No field
-            TextField(
-              controller: _admissionNoController,
-              decoration: InputDecoration(
-                labelText: "Enter Admission No",
-                labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.white,
-              ),
+            ThemeHelpers.themedAvatar(
+              size: 40,
+              icon: Icons.edit_outlined, // Edit icon
             ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 35, 2, 93),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: fetchStudent,
-              child: Text("Fetch Student",
-                  style: GoogleFonts.poppins(
-                      fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 12),
+            Text(
+              "Edit Student",
+              style: Theme.of(context).appBarTheme.titleTextStyle,
             ),
-
-            const SizedBox(height: 20),
-
-            if (isLoading) CircularProgressIndicator(),
-
-            // Step 2: Editable form
-            if (studentData != null)
-              Expanded(
-                child: ListView(
-                  children: [
-                    buildInputField("Student Name", "Student Name"),
-                    buildInputField("Academic Year", "Academic Year"),
-                    buildInputField("Phone", "Phone"),
-                    buildInputField("Email", "Email"),
-                    buildInputField("Date of Birth", "dob"),
-                    buildInputField("Father Name", "Father Name"),
-                    buildInputField("Mother Name", "Mother Name"),
-                    buildInputField("Address", "Address"),
-                    buildInputField("Parent Phone", "Parent Phone"),
-                    buildInputField("Guardian Name", "Guardian Name"),
-                    buildInputField("Guardian Phone", "Guardian Phone"),
-                    buildInputField("Department", "Department"),
-                    buildInputField("Semester", "Semester"),
-                    buildInputField("Gender", "Gender"),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: updateStudent,
-                      child: Text("Save Changes",
-                          style: GoogleFonts.poppins(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                    )
-                  ],
-                ),
-              ),
           ],
+        ),
+      ),
+      body: ThemeHelpers.gradientBackground(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Step 1: Admission No field
+              ThemeHelpers.themedTextField(
+                controller: _admissionNoController,
+                labelText: "Enter Admission No",
+              ),
+              const SizedBox(height: 16),
+              ThemeHelpers.themedButton(
+                text: "Fetch Student",
+                onPressed: fetchStudent,
+                style: AppButtonStyles.blueButton,
+              ),
+
+              const SizedBox(height: 20),
+
+              if (isLoading) 
+                Center(child: ThemedWidgets.loadingIndicator(message: 'Loading student...')),
+
+              // Step 2: Editable form
+              if (studentData != null)
+                Expanded(
+                  child: ThemeHelpers.themedCard(
+                    child: ListView(
+                      children: [
+                        buildInputField("Student Name", "Student Name"),
+                        buildInputField("Academic Year", "Academic Year"),
+                        buildInputField("Phone", "Phone"),
+                        buildInputField("Email", "Email"),
+                        buildInputField("Date of Birth", "dob"),
+                        buildInputField("Father Name", "Father Name"),
+                        buildInputField("Mother Name", "Mother Name"),
+                        buildInputField("Address", "Address"),
+                        buildInputField("Parent Phone", "Parent Phone"),
+                        buildInputField("Guardian Name", "Guardian Name"),
+                        buildInputField("Guardian Phone", "Guardian Phone"),
+                        buildInputField("Department", "Department"),
+                        buildInputField("Semester", "Semester"),
+                        buildInputField("Gender", "Gender"),
+                        const SizedBox(height: 20),
+                        ThemeHelpers.themedButton(
+                          text: "Save Changes",
+                          onPressed: updateStudent,
+                          style: AppButtonStyles.tealButton,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
