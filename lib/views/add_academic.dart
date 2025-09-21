@@ -62,7 +62,8 @@ Future<void> saveAcademicData() async {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(responseData["message"] ?? "Saved!")),
       );
-      Navigator.pop(context);
+      // Return true to indicate data was updated
+      Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to Save: ${response.body}")),

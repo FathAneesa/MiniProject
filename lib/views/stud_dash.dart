@@ -54,13 +54,27 @@ class StudDash extends StatelessWidget {
                 ThemeHelpers.dashboardButton(
                   text: "Add Academic Data",
                   backgroundColor: AppTheme.accentBlue,
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => AddAcademicPage(studentId: studentId),
                       ),
                     );
+                    
+                    // If academic data was updated, show notification
+                    if (result == true && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '✅ Academic data saved! Your recommendations will be updated.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: AppTheme.successColor,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 15),
