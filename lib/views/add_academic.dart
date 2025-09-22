@@ -82,64 +82,164 @@ Future<void> saveAcademicData() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            ThemeHelpers.themedAvatar(
-              size: 40,
-              icon: Icons.school_outlined, // Academic/education icon
-            ),
-            const SizedBox(width: 12),
+      body: ThemeHelpers.dashboardBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header section with themed avatar and title
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: AppTheme.textOnPrimary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ThemeHelpers.themedAvatar(
+                      size: 50,
+                      icon: Icons.school_outlined, // Academic/education icon
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Add Academic Data',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textOnPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Content section
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
             Text(
-              'Add Academic Data',
-              style: Theme.of(context).appBarTheme.titleTextStyle,
+              "Subjects & Marks",
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
             ),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Subjects & Marks",
-                style: GoogleFonts.poppins(
-                    fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
 
             // Dynamic Subject List
             Column(
               children: List.generate(subjects.length, (index) {
-                return Card(
-                  color: Colors.white,
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                return Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.primaryColor.withOpacity(0.2),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
                         Expanded(
                           flex: 3,
                           child: TextField(
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: "Subject",
-                              border: OutlineInputBorder(),
+                              labelStyle: GoogleFonts.poppins(
+                                color: AppTheme.textSecondary,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppTheme.primaryColor.withOpacity(0.3),
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppTheme.primaryColor.withOpacity(0.3),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppTheme.primaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
                             ),
                             onChanged: (val) {
                               subjects[index]["name"] = val;
                             },
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Expanded(
                           flex: 2,
                           child: TextField(
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: "Mark",
-                              border: OutlineInputBorder(),
+                              labelStyle: GoogleFonts.poppins(
+                                color: AppTheme.textSecondary,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppTheme.primaryColor.withOpacity(0.3),
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppTheme.primaryColor.withOpacity(0.3),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppTheme.primaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
                             ),
                             onChanged: (val) {
                               subjects[index]["mark"] = val;
@@ -147,8 +247,13 @@ Future<void> saveAcademicData() async {
                             },
                           ),
                         ),
+                        const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
+                          icon: Icon(
+                            Icons.delete,
+                            color: AppTheme.errorColor,
+                            size: 24,
+                          ),
                           onPressed: () {
                             setState(() {
                               subjects.removeAt(index);
@@ -163,92 +268,182 @@ Future<void> saveAcademicData() async {
               }),
             ),
 
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  subjects.add({"name": "", "mark": ""});
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
-              child: Text("Add Another Subject",
-                  style: GoogleFonts.poppins(color: Colors.white)),
+            const SizedBox(height: 16),
+            Center(
+              child: ThemeHelpers.themedButton(
+                text: "Add Another Subject",
+                onPressed: () {
+                  setState(() {
+                    subjects.add({"name": "", "mark": ""});
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 207, 89, 181),
+                  foregroundColor: AppTheme.textOnPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
             ),
 
-            const SizedBox(height: 20),
-            Text("Study Hours (per day)",
-                style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 24),
+            Text(
+              "Study Hours (per day)",
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: studyHoursController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(), hintText: "Enter study hours"),
+              decoration: InputDecoration(
+                hintText: "Enter study hours",
+                hintStyle: GoogleFonts.poppins(
+                  color: AppTheme.textSecondary,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppTheme.primaryColor,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
             ),
 
-            const SizedBox(height: 20),
-            Text("Focus Level (out of 10)",
-                style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 24),
+            Text(
+              "Focus Level (out of 10)",
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: focusLevelController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(), hintText: "Enter focus level"),
+              decoration: InputDecoration(
+                hintText: "Enter focus level",
+                hintStyle: GoogleFonts.poppins(
+                  color: AppTheme.textSecondary,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppTheme.primaryColor,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
             ),
 
-            const SizedBox(height: 20),
-            Text("Overall Marks",
-                style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 24),
+            Text(
+              "Overall Marks",
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               width: double.infinity,
               decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey[200]),
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.primaryColor.withOpacity(0.1),
+                    AppTheme.secondaryColor.withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Text(
                 overallMark.toString(),
                 style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.w600),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
 
             const SizedBox(height: 20),
             Center(
-  child: ElevatedButton(
-    onPressed: _isConfirming
-        ? null
-        : () async {
-            setState(() => _isConfirming = true);
-            await saveAcademicData();   // ✅ call the correct function
-            setState(() => _isConfirming = false);
-          },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.green,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-    ),
-    child: _isConfirming
-        ? const SizedBox(
-            height: 20,
-            width: 20,
-            child: CircularProgressIndicator(
-              color: Colors.white,
-              strokeWidth: 3,
-            ))
-        : Text("Confirm",
-            style: GoogleFonts.poppins(color: Colors.white)),
-  ),
-),
-
-          ],
+              child: ThemeHelpers.themedButton(
+                text: _isConfirming ? "Saving..." : "Confirm",
+                onPressed: _isConfirming
+                    ? () {}
+                    : () async {
+                        setState(() => _isConfirming = true);
+                        await saveAcademicData();
+                        setState(() => _isConfirming = false);
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 199, 76, 173),
+                  foregroundColor: AppTheme.textOnPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            if (_isConfirming) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: ThemedWidgets.loadingIndicator(message: 'Saving academic data...'),
+              ),
+            ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

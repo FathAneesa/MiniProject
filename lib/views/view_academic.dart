@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config.dart'; // Import the centralized config
+import '../theme/app_theme.dart';
+import '../theme/theme_helpers.dart';
 
 class ViewAcademicPage extends StatefulWidget {
   final String studentId;
@@ -86,20 +88,115 @@ Future<void> editSubject(int index) async {
   final nameController = TextEditingController(text: subject["name"]);
   final markController = TextEditingController(text: subject["mark"].toString());
 
+  await ThemeHelpers.showThemedDialog(
+    context: context,
+    title: "Edit Subject",
+    content: "",
+    confirmText: "Save",
+    cancelText: "Cancel",
+    onConfirm: () async {
+      final updatedSubject = {
+        "name": nameController.text,
+        "mark": int.tryParse(markController.text) ?? 0,
+      };
+
+      try {
+        final response = await http.put(
+          Uri.parse("$apiBaseUrl/academics/${widget.studentId}/subjects/$index"),
+          headers: {"Content-Type": "application/json"},
+          body: json.encode(updatedSubject),
+        );
+
+        if (response.statusCode == 200) {
+          final decoded = json.decode(response.body);
+          if (decoded["status"] == "success") {
+            setState(() {
+              subjects[index] = updatedSubject;
+            });
+            Navigator.pop(context);
+            ThemeHelpers.showThemedSnackBar(
+              context,
+              message: "Subject updated successfully",
+            );
+          }
+        } else {
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: "Failed to update: ${response.body}",
+            isError: true,
+          );
+        }
+      } catch (e) {
+        ThemeHelpers.showThemedSnackBar(
+          context,
+          message: "Error updating subject: $e",
+          isError: true,
+        );
+      }
+    },
+  );
+
+  // Show custom dialog with themed text fields
   await showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text("Edit Subject"),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Text(
+        "Edit Subject",
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: nameController,
-            decoration: const InputDecoration(labelText: "Subject Name"),
+            decoration: InputDecoration(
+              labelText: "Subject Name",
+              labelStyle: GoogleFonts.poppins(
+                color: AppTheme.textSecondary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 2,
+                ),
+              ),
+            ),
           ),
+          const SizedBox(height: 16),
           TextField(
             controller: markController,
-            decoration: const InputDecoration(labelText: "Marks"),
+            decoration: InputDecoration(
+              labelText: "Marks",
+              labelStyle: GoogleFonts.poppins(
+                color: AppTheme.textSecondary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 2,
+                ),
+              ),
+            ),
             keyboardType: TextInputType.number,
           ),
         ],
@@ -107,7 +204,12 @@ Future<void> editSubject(int index) async {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
+          child: Text(
+            "Cancel",
+            style: GoogleFonts.poppins(
+              color: AppTheme.textSecondary,
+            ),
+          ),
         ),
         ElevatedButton(
           onPressed: () async {
@@ -117,7 +219,6 @@ Future<void> editSubject(int index) async {
             };
 
             try {
-              // ✅ Send PUT request to backend
               final response = await http.put(
                 Uri.parse("$apiBaseUrl/academics/${widget.studentId}/subjects/$index"),
                 headers: {"Content-Type": "application/json"},
@@ -127,27 +228,41 @@ Future<void> editSubject(int index) async {
               if (response.statusCode == 200) {
                 final decoded = json.decode(response.body);
                 if (decoded["status"] == "success") {
-                  // ✅ Update UI
                   setState(() {
                     subjects[index] = updatedSubject;
                   });
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Subject updated successfully")),
+                  ThemeHelpers.showThemedSnackBar(
+                    context,
+                    message: "Subject updated successfully",
                   );
                 }
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Failed to update: ${response.body}")),
+                ThemeHelpers.showThemedSnackBar(
+                  context,
+                  message: "Failed to update: ${response.body}",
+                  isError: true,
                 );
               }
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Error updating subject: $e")),
+              ThemeHelpers.showThemedSnackBar(
+                context,
+                message: "Error updating subject: $e",
+                isError: true,
               );
             }
           },
-          child: const Text("Save"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: AppTheme.textOnPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            "Save",
+            style: GoogleFonts.poppins(),
+          ),
         ),
       ],
     ),
@@ -157,160 +272,280 @@ Future<void> editSubject(int index) async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 221, 124, 224),
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 219, 32, 236),
-        title: Text(
-          'View Academic Data',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Colors.white,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        centerTitle: true,
-        elevation: 6,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : subjects.isEmpty
-                ? Center(
-                    child: Text(
-                      "No academic data found.",
-                      style: GoogleFonts.poppins(
-                          fontSize: 18, fontWeight: FontWeight.w600),
+      body: ThemeHelpers.dashboardBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header section with themed avatar and title
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: AppTheme.textOnPrimary,
+                        size: 28,
+                      ),
                     ),
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              "Subjects",
-                              style: GoogleFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              "Marks",
-                              style: GoogleFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 40),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: subjects.length,
-                          itemBuilder: (context, index) {
-                            return Card(
-                              color: Colors.white,
-                              elevation: 5,
-                              shadowColor: Colors.blueAccent.withOpacity(0.4),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 12),
-                                title: Text(
-                                  subjects[index]["name"] ?? "",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green[100],
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        subjects[index]["mark"].toString(),
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color.fromARGB(255, 65, 2, 63),
-                                        ),
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          color: Colors.blue),
-                                      onPressed: () => editSubject(index),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          color: Colors.red),
-                                      onPressed: () => deleteSubject(index),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
+                    const SizedBox(width: 8),
+                    ThemeHelpers.themedAvatar(
+                      size: 50,
+                      icon: Icons.school_outlined, // Academic/education icon
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'View Academic Data',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textOnPrimary,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      if (studyHours != null || focusLevel != null)
-                        Card(
-                          color: Colors.yellow[50],
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Study Hours: ${studyHours ?? "N/A"}",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "Focus Level: ${focusLevel ?? "N/A"} / 10",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                    ),
+                  ],
+                ),
+              ),
+              // Content section
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
                     ],
                   ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: isLoading
+                        ? Center(
+                            child: ThemedWidgets.loadingIndicator(
+                              message: 'Loading academic data...',
+                            ),
+                          )
+                        : subjects.isEmpty
+                            ? ThemedWidgets.emptyState(
+                                title: "No Academic Data Found",
+                                subtitle: "No academic data available for this student.",
+                                icon: Icons.school_outlined,
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header row
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppTheme.primaryColor.withOpacity(0.1),
+                                          AppTheme.secondaryColor.withOpacity(0.1),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                            "Subjects",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            "Marks",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 80), // Space for action buttons
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  // Subjects list
+                                  Expanded(
+                                    child: ListView.builder(
+                                      itemCount: subjects.length,
+                                      itemBuilder: (context, index) {
+                                        return Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.cardBackground.withOpacity(0.3),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: AppTheme.primaryColor.withOpacity(0.2),
+                                              width: 1,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: AppTheme.primaryColor.withOpacity(0.08),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ListTile(
+                                            contentPadding: const EdgeInsets.symmetric(
+                                                horizontal: 16, vertical: 8),
+                                            title: Text(
+                                              subjects[index]["name"] ?? "",
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppTheme.textPrimary,
+                                              ),
+                                            ),
+                                            trailing: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 12, vertical: 8),
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        AppTheme.primaryColor.withOpacity(0.1),
+                                                        AppTheme.secondaryColor.withOpacity(0.1),
+                                                      ],
+                                                    ),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    border: Border.all(
+                                                      color: AppTheme.primaryColor.withOpacity(0.3),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    subjects[index]["mark"].toString(),
+                                                    style: GoogleFonts.poppins(
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: AppTheme.primaryColor,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                IconButton(
+                                                  icon: Icon(
+                                                    Icons.edit,
+                                                    color: AppTheme.primaryColor,
+                                                    size: 20,
+                                                  ),
+                                                  onPressed: () => editSubject(index),
+                                                ),
+                                                IconButton(
+                                                  icon: Icon(
+                                                    Icons.delete,
+                                                    color: AppTheme.errorColor,
+                                                    size: 20,
+                                                  ),
+                                                  onPressed: () => deleteSubject(index),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  // Study info section
+                                  if (studyHours != null || focusLevel != null)
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 16),
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppTheme.primaryColor.withOpacity(0.1),
+                                            AppTheme.secondaryColor.withOpacity(0.1),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: AppTheme.primaryColor.withOpacity(0.3),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Study Information",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.primaryColor,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.schedule,
+                                                color: AppTheme.primaryColor,
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                "Study Hours: ${studyHours ?? "N/A"} hours/day",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppTheme.textPrimary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.psychology,
+                                                color: AppTheme.primaryColor,
+                                                size: 20,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                "Focus Level: ${focusLevel ?? "N/A"} / 10",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppTheme.textPrimary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

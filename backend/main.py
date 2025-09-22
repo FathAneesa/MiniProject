@@ -28,6 +28,12 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = os.getenv("DB_NAME", "wellnessDB")
 
+# Email configuration
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+
 if not MONGO_URI:
     raise RuntimeError("❌ MONGO_URI is not set in .env file")
 
@@ -112,6 +118,242 @@ class AcademicData(BaseModel):
     focusLevel: str
     overallMark: int
 
+# OTP Models
+class EmailCheckRequest(BaseModel):
+    email: str
+
+class OTPRequest(BaseModel):
+    email: str
+
+class OTPVerifyRequest(BaseModel):
+    email: str
+    otp: str
+    token: str
+
+class PasswordResetRequest(BaseModel):
+    email: str
+    newPassword: str
+    token: str
+
+# ========================
+# Email and OTP utility functions
+# ========================
+
+async def send_email_otp(to_email: str, otp: str) -> bool:
+    """Send OTP via email using SMTP"""
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        print("❌ Email credentials not configured")
+        return False
+    
+    try:
+        # Create message
+        subject = "Password Reset OTP - AI Wellness System"
+        body = f"""
+        Dear User,
+        
+        Your One-Time Password (OTP) for password reset is: {otp}
+        
+        This OTP is valid for 10 minutes. Please do not share this code with anyone.
+        
+        If you didn't request this, please ignore this email.
+        
+        Best regards,
+        AI Wellness System Team
+        """
+        
+        msg = MIMEText(body)
+        msg['Subject'] = subject
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = to_email
+        
+        # Send email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.send_message(msg)
+        
+        print(f"✅ OTP email sent successfully to {to_email}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send email: {str(e)}")
+        return False
+
+def generate_otp() -> str:
+    """Generate a 6-digit OTP"""
+    return str(random.randint(100000, 999999))
+
+def generate_token() -> str:
+    """Generate a random token for verification"""
+    return f"token_{random.randint(100000, 999999)}_{int(datetime.utcnow().timestamp())}"
+
+# ========================
+# OTP Routes
+# ========================
+
+@app.post("/auth/check-email", response_description="Check if email exists")
+async def check_email_exists(request: EmailCheckRequest):
+    """Check if email exists in the database"""
+    students_collection = app.mongodb["Students"]
+    
+    # Check if email exists in students collection
+    student = await students_collection.find_one({
+        "Email": {"$regex": f"^{request.email}$", "$options": "i"}
+    })
+    
+    return {
+        "exists": student is not None,
+        "message": "Email found" if student else "Email not found"
+    }
+
+@app.post("/auth/send-otp", response_description="Send OTP to email")
+async def send_otp_to_email(request: OTPRequest):
+    """Generate and send OTP to user's email"""
+    students_collection = app.mongodb["Students"]
+    otp_collection = app.mongodb["otp_tokens"]
+    
+    # Verify email exists
+    student = await students_collection.find_one({
+        "Email": {"$regex": f"^{request.email}$", "$options": "i"}
+    })
+    
+    if not student:
+        raise HTTPException(status_code=404, detail="Email not found")
+    
+    # Generate OTP and token
+    otp = generate_otp()
+    token = generate_token()
+    
+    # Store OTP in database with expiration
+    expiry_time = datetime.utcnow() + timedelta(minutes=10)
+    
+    await otp_collection.update_one(
+        {"email": request.email},
+        {
+            "$set": {
+                "email": request.email,
+                "otp": otp,
+                "token": token,
+                "created_at": datetime.utcnow(),
+                "expires_at": expiry_time,
+                "verified": False
+            }
+        },
+        upsert=True
+    )
+    
+    # Send email
+    email_sent = await send_email_otp(request.email, otp)
+    
+    if not email_sent:
+        # If real email fails, provide debug info but still return success for development
+        print(f"📧 DEBUG: OTP for {request.email} is {otp}")
+        return {
+            "success": True,
+            "message": "OTP generated (email service unavailable, check console for OTP)",
+            "token": token,
+            "debug_otp": otp  # Remove this in production
+        }
+    
+    return {
+        "success": True,
+        "message": "OTP sent successfully to your email",
+        "token": token
+    }
+
+@app.post("/auth/verify-otp", response_description="Verify OTP")
+async def verify_otp(request: OTPVerifyRequest):
+    """Verify the OTP entered by user"""
+    otp_collection = app.mongodb["otp_tokens"]
+    
+    # Find OTP record
+    otp_record = await otp_collection.find_one({
+        "email": request.email,
+        "token": request.token
+    })
+    
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="Invalid token or email")
+    
+    # Check if OTP is expired
+    if datetime.utcnow() > otp_record["expires_at"]:
+        raise HTTPException(status_code=400, detail="OTP has expired")
+    
+    # Check if OTP matches
+    if otp_record["otp"] != request.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    
+    # Mark as verified and generate reset token
+    reset_token = generate_token()
+    
+    await otp_collection.update_one(
+        {"email": request.email, "token": request.token},
+        {
+            "$set": {
+                "verified": True,
+                "reset_token": reset_token,
+                "verified_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    return {
+        "valid": True,
+        "message": "OTP verified successfully",
+        "resetToken": reset_token
+    }
+
+@app.post("/auth/reset-password", response_description="Reset password")
+async def reset_password(request: PasswordResetRequest):
+    """Reset user password after OTP verification"""
+    otp_collection = app.mongodb["otp_tokens"]
+    students_collection = app.mongodb["Students"]
+    users_collection = app.mongodb["Users"]
+    
+    # Verify reset token
+    otp_record = await otp_collection.find_one({
+        "email": request.email,
+        "reset_token": request.token,
+        "verified": True
+    })
+    
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+    
+    # Check if token is still valid (within 30 minutes of verification)
+    if datetime.utcnow() > otp_record["verified_at"] + timedelta(minutes=30):
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Find student by email
+    student = await students_collection.find_one({
+        "Email": {"$regex": f"^{request.email}$", "$options": "i"}
+    })
+    
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Update password in both collections
+    user_id = student.get("UserID")
+    
+    # Update in Students collection
+    await students_collection.update_one(
+        {"Email": {"$regex": f"^{request.email}$", "$options": "i"}},
+        {"$set": {"Password": request.newPassword}}
+    )
+    
+    # Update in Users collection
+    await users_collection.update_one(
+        {"username": user_id},
+        {"$set": {"password": request.newPassword}}
+    )
+    
+    # Clean up OTP record
+    await otp_collection.delete_one({"email": request.email})
+    
+    return {
+        "success": True,
+        "message": "Password reset successfully"
+    }
+
 # ========================
 # Routes
 # ========================
@@ -170,7 +412,7 @@ async def login_user(user: User):
 
 @app.get("/users", response_description="List all users", response_model=List[UserOut])
 async def list_users():
-    users_collection = app.mongodb["users"]
+    users_collection = app.mongodb["Users"]  # Fixed collection name
     users = []
     try:
         async for u in users_collection.find():
@@ -184,8 +426,8 @@ async def list_users():
 async def add_student(student: dict):
     """Adds a new student with auto-generated username and password, and creates a user login."""
 
-    Students_collection = app.mongodb["Students"]
-    users_collection = app.mongodb["Users"]
+    Students_collection = app.mongodb["Students"]  # Fixed collection name
+    users_collection = app.mongodb["Users"]        # Fixed collection name
 
     # Check duplicate admission number
     if await Students_collection.find_one({"Admission No": student.get("Admission No")}):
@@ -221,7 +463,7 @@ async def add_student(student: dict):
 
 @app.get("/students")
 async def list_students():
-    students_collection = app.mongodb["Students"]
+    students_collection = app.mongodb["Students"]  # Fixed collection name
 
     # Fetch all documents
     students_cursor = students_collection.find()

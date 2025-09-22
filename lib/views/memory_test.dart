@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config.dart';
+import '../theme/app_theme.dart';
+import '../theme/theme_helpers.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MemoryTestPage extends StatefulWidget {
   final String studentId;
@@ -71,6 +75,10 @@ class _MemoryTestPageState extends State<MemoryTestPage> {
     _timeLeft = 10;
     _gameTimer?.cancel();
     _gameTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       if (_timeLeft > 0) {
         setState(() => _timeLeft--);
       } else {
@@ -80,20 +88,28 @@ class _MemoryTestPageState extends State<MemoryTestPage> {
   }
 
   void _nextGame({bool scored = false}) {
-  if (scored) _score = (_score + 1).clamp(0, 10);
+    if (!mounted) return; // Add mounted check
+    
+    if (scored) _score = (_score + 1).clamp(0, 10);
 
-  _gameTimer?.cancel();
-  _resetGameStates();
+    _gameTimer?.cancel();
+    _resetGameStates();
 
-  if (_currentGameIndex < 9) {
-    setState(() {
-      _currentGameIndex++;
-    });
-    _startGameTimer();
-  } else {
-    _endTest();
+    if (_currentGameIndex < 9) {
+      setState(() {
+        _currentGameIndex++;
+      });
+      _startGameTimer();
+    } else {
+      _endTest();
+    }
   }
-}
+
+  @override
+  void dispose() {
+    _gameTimer?.cancel(); // Cancel timer on dispose
+    super.dispose();
+  }
 
 
   void _resetGameStates() {
@@ -115,7 +131,7 @@ class _MemoryTestPageState extends State<MemoryTestPage> {
     _gameTimer?.cancel();
     setState(() => _gameOver = true);
 
-    final url = Uri.parse("http://10.0.2.2:8000/focus-test/add");
+    final url = Uri.parse("$apiBaseUrl/focus-test/add");
     final body = jsonEncode({
       "studentId": widget.studentId,
       "score": _score,
@@ -128,6 +144,193 @@ class _MemoryTestPageState extends State<MemoryTestPage> {
     } catch (e) {
       debugPrint("Error sending score: $e");
     }
+  }
+
+  // -------------------- SCREEN BUILDERS --------------------
+  Widget _buildGameOverScreen() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ThemeHelpers.themedAvatar(
+          size: 100,
+          icon: Icons.celebration,
+          gradient: LinearGradient(
+            colors: [AppTheme.successColor, AppTheme.successColor.withOpacity(0.7)],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          "Test Completed!",
+          style: GoogleFonts.poppins(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.primaryColor.withOpacity(0.1),
+                AppTheme.secondaryColor.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                "Your Score",
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "$_score / 10",
+                style: GoogleFonts.poppins(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        ThemeHelpers.themedButton(
+          text: "Back to Dashboard",
+          onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 199, 76, 173),
+            foregroundColor: AppTheme.textOnPrimary,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStartScreen() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ThemeHelpers.themedAvatar(
+          size: 120,
+          icon: Icons.psychology_outlined,
+        ),
+        const SizedBox(height: 24),
+        Text(
+          "Memory & Focus Test",
+          style: GoogleFonts.poppins(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          "Ready to challenge your mind?",
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Complete 10 different cognitive games to test your memory and focus abilities.",
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: AppTheme.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 32),
+        ThemeHelpers.themedButton(
+          text: "Start Test",
+          onPressed: _startTest,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 199, 76, 173),
+            foregroundColor: AppTheme.textOnPrimary,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGameScreen() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Game progress indicator
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.primaryColor.withOpacity(0.1),
+                AppTheme.secondaryColor.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            "Game ${_currentGameIndex + 1} of 10",
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        // Timer
+        SizedBox(
+          width: 80,
+          height: 80,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CircularProgressIndicator(
+                value: _timeLeft / 10,
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                color: AppTheme.primaryColor,
+                strokeWidth: 6,
+              ),
+              Text(
+                "${_timeLeft}s",
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              )
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        // Game content
+        _buildGame(_gameOrder[_currentGameIndex]),
+      ],
+    );
   }
 
   // -------------------- GAME BUILDER --------------------
@@ -165,38 +368,71 @@ class _MemoryTestPageState extends State<MemoryTestPage> {
       _sequence = List.generate(3 + _random.nextInt(3), (_) => _random.nextInt(4));
       _showSequence = true;
       Future.delayed(const Duration(seconds: 2), () {
-        _showSequence = false;
-        setState(() {});
+        if (mounted) {
+          _showSequence = false;
+          setState(() {});
+        }
       });
     }
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
-          "Sequence Memory: Repeat the sequence of colors displayed!",
-          style: TextStyle(color: Colors.white, fontSize: 16),
+        Text(
+          "Sequence Memory",
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Repeat the sequence of colors displayed!",
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: AppTheme.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         _showSequence
             ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: _sequence
                     .map((i) => Container(
-                          width: 50,
-                          height: 50,
-                          margin: const EdgeInsets.all(4),
-                          color: colors[i],
+                          width: 60,
+                          height: 60,
+                          margin: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: colors[i],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colors[i].withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
                         ))
                     .toList(),
               )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            : Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
                 children: List.generate(4, (i) {
                   return ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: colors[i], minimumSize: const Size(50, 50)),
+                        backgroundColor: colors[i],
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(60, 60),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                      ),
                       onPressed: () {
                         _userSequence.add(i);
                         if (_userSequence.length == _sequence.length) {
@@ -204,7 +440,7 @@ class _MemoryTestPageState extends State<MemoryTestPage> {
                           _nextGame();
                         }
                       },
-                      child: null);
+                      child: const SizedBox());
                 }),
               ),
       ],
@@ -228,27 +464,78 @@ Widget _quickMathGame() {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Text(
-        "Quick Math: Solve this problem!",
-        style: TextStyle(color: Colors.white, fontSize: 16),
+      Text(
+        "Quick Math",
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        "Solve this problem quickly!",
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
         textAlign: TextAlign.center,
       ),
-      const SizedBox(height: 10),
-      Text("$_mathA + $_mathB = ?", style: const TextStyle(color: Colors.white, fontSize: 24)),
-      const SizedBox(height: 10),
+      const SizedBox(height: 24),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppTheme.primaryColor.withOpacity(0.1),
+              AppTheme.secondaryColor.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.3),
+          ),
+        ),
+        child: Text(
+          "$_mathA + $_mathB = ?",
+          style: GoogleFonts.poppins(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+      ),
+      const SizedBox(height: 24),
       Wrap(
-        spacing: 10,
+        spacing: 12,
+        runSpacing: 12,
+        alignment: WrapAlignment.center,
         children: _mathOptions!.map((o) {
           return ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 215, 107, 186),
+              foregroundColor: AppTheme.textOnPrimary,
+              minimumSize: const Size(60, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+            ),
             onPressed: () {
               if (o == _mathAnswer) _score++;
-              _mathA = null; // reset for next game
+              _mathA = null;
               _mathB = null;
               _mathAnswer = null;
               _mathOptions = null;
               _nextGame();
             },
-            child: Text("$o"),
+            child: Text(
+              "$o",
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           );
         }).toList(),
       )
@@ -267,23 +554,69 @@ Widget _quickMathGame() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
-          "Stroop Test: Tap the color of the text, not the word!",
-          style: TextStyle(color: Colors.white, fontSize: 16),
+        Text(
+          "Stroop Test",
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Tap the color of the text, not the word!",
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: AppTheme.textSecondary,
+          ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 10),
-        Text(words[wordIndex],
-            style: TextStyle(color: colorMap[words[colorIndex]], fontSize: 32)),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+            ),
+          ),
+          child: Text(
+            words[wordIndex],
+            style: GoogleFonts.poppins(
+              color: colorMap[words[colorIndex]],
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
         Wrap(
-          spacing: 10,
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
           children: colorMap.keys.map((c) {
             return ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 215, 107, 186),
+                foregroundColor: AppTheme.textOnPrimary,
+                minimumSize: const Size(80, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+              ),
               onPressed: () {
                 if (c == words[colorIndex]) _score++;
                 _nextGame();
               },
-              child: Text(c),
+              child: Text(
+                c,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             );
           }).toList(),
         )
@@ -310,27 +643,69 @@ Widget _reactionGame() {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Text(
-        "Reaction Test: Tap the button as soon as you see GO!",
-        style: TextStyle(color: Colors.white, fontSize: 16),
+      Text(
+        "Reaction Test",
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        "Tap the button as soon as you see GO!",
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
         textAlign: TextAlign.center,
       ),
-      const SizedBox(height: 20),
-      ElevatedButton(
-        onPressed: _reactionSignal
-            ? () {
-                if (_reactionStart != null) {
-                  int reactionTime =
-                      DateTime.now().millisecondsSinceEpoch - _reactionStart!;
-                  if (reactionTime < 1000) _score++; // fast reaction
+      const SizedBox(height: 32),
+      Container(
+        width: 200,
+        height: 120,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: _reactionSignal
+                ? [AppTheme.successColor, AppTheme.successColor.withOpacity(0.7)]
+                : [AppTheme.primaryColor.withOpacity(0.1), AppTheme.secondaryColor.withOpacity(0.1)],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _reactionSignal ? AppTheme.successColor : AppTheme.primaryColor.withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          onPressed: _reactionSignal
+              ? () {
+                  if (_reactionStart != null) {
+                    int reactionTime =
+                        DateTime.now().millisecondsSinceEpoch - _reactionStart!;
+                    if (reactionTime < 1000) _score++; // fast reaction
+                  }
+                  _reactionSignal = false;
+                  _reactionStart = null;
+                  _nextGame();
                 }
-                _reactionSignal = false;
-                _reactionStart = null;
-                _nextGame();
-              }
-            : null,
-        child: Text(_reactionSignal ? "GO!" : "Wait..."),
-      )
+              : null,
+          child: Text(
+            _reactionSignal ? "GO!" : "Wait...",
+            style: GoogleFonts.poppins(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: _reactionSignal ? Colors.white : AppTheme.textSecondary,
+            ),
+          ),
+        ),
+      ),
     ],
   );
 }
@@ -342,12 +717,24 @@ Widget _oddOneOutGame() {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Text(
-        "Odd One Out: Tap the square that looks different!",
-        style: TextStyle(color: Colors.white, fontSize: 16),
+      Text(
+        "Odd One Out",
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        "Tap the square that looks different!",
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
         textAlign: TextAlign.center,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: 24),
       Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -355,12 +742,15 @@ Widget _oddOneOutGame() {
           return ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: i == oddIndex ? Colors.red : Colors.blue,
-                minimumSize: const Size(50, 50)),
+                minimumSize: const Size(50, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),),
             onPressed: () {
               if (i == oddIndex) _score++;
               _nextGame();
             },
-            child: null,
+            child: const SizedBox(),
           );
         }),
       ),
@@ -401,53 +791,90 @@ Widget _wordRecallGame() {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Text(
-        "Word Recall: Remember these words!",
-        style: TextStyle(color: Colors.white, fontSize: 16),
+      Text(
+        "Word Recall",
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        _showWords ? "Remember these words!" : "Select a word you remember from the list:",
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
         textAlign: TextAlign.center,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: 24),
 
       // Show words to remember
       if (_showWords)
         Wrap(
           spacing: 8,
           children: _shownWords
-              .map((w) => Chip(
-                    label: Text(w, style: const TextStyle(color: Colors.white)),
-                    backgroundColor: Colors.deepPurple,
+              .map((w) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.primaryColor.withOpacity(0.2),
+                          AppTheme.secondaryColor.withOpacity(0.2),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppTheme.primaryColor.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      w,
+                      style: GoogleFonts.poppins(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ))
               .toList(),
         ),
 
       // Show options after words disappear
       if (!_showWords)
-        Column(
-          children: [
-            const SizedBox(height: 10),
-            const Text(
-              "Select a word you remember from the list:",
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              children: _options
-                  .map((word) => ElevatedButton(
-                        onPressed: () {
-                          // Award 1 point if the user selects a correct word
-                          if (_shownWords.contains(word)) _score++;
-                          
-                          // Reset and move to next game
-                          _shownWords = [];
-                          _options = [];
-                          _nextGame();
-                        },
-                        child: Text(word),
-                      ))
-                  .toList(),
-            ),
-          ],
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
+          children: _options
+              .map((word) => ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 215, 107, 186),
+                      foregroundColor: AppTheme.textOnPrimary,
+                      minimumSize: const Size(80, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
+                    onPressed: () {
+                      // Award 1 point if the user selects a correct word
+                      if (_shownWords.contains(word)) _score++;
+                      
+                      // Reset and move to next game
+                      _shownWords = [];
+                      _options = [];
+                      _nextGame();
+                    },
+                    child: Text(
+                      word,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ))
+              .toList(),
         ),
     ],
   );
@@ -466,12 +893,24 @@ Widget _patternMemoryGame() {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Text(
-        "Pattern Memory: Tap the highlighted square!",
-        style: TextStyle(color: Colors.white, fontSize: 16),
+      Text(
+        "Pattern Memory",
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        "Tap the highlighted square!",
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
         textAlign: TextAlign.center,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: 24),
       Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -480,13 +919,16 @@ Widget _patternMemoryGame() {
             style: ElevatedButton.styleFrom(
               backgroundColor: i == _patternSquare ? Colors.green : Colors.grey,
               minimumSize: const Size(50, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               if (i == _patternSquare) _score++;
               _patternSquare = null;
               _nextGame();
             },
-            child: null,
+            child: const SizedBox(),
           );
         }),
       ),
@@ -503,12 +945,24 @@ Widget _missingTileGame() {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Text(
-        "Missing Tile: Tap the blank spot!",
-        style: TextStyle(color: Colors.white, fontSize: 16),
+      Text(
+        "Missing Tile",
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        "Tap the blank spot!",
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
         textAlign: TextAlign.center,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: 24),
       Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -523,14 +977,23 @@ Widget _missingTileGame() {
               child: Container(
                 width: 50,
                 height: 50,
-                color: Colors.white,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                  ),
+                ),
               ),
             );
           } else {
             return Container(
               width: 50,
               height: 50,
-              color: Colors.blue,
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(8),
+              ),
             );
           }
         }),
@@ -558,17 +1021,37 @@ Widget _numberTapGame() {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Text(
-        "Number Tap: Tap numbers in ascending order!",
-        style: TextStyle(color: Colors.white, fontSize: 16),
+      Text(
+        "Number Tap",
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: 8),
+      Text(
+        "Tap numbers in ascending order!",
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 24),
       Wrap(
         spacing: 8,
         runSpacing: 8,
         children: _numberSequence!.map((n) {
           return ElevatedButton(
-            style: ElevatedButton.styleFrom(minimumSize: const Size(50, 50)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 215, 107, 186),
+              foregroundColor: AppTheme.textOnPrimary,
+              minimumSize: const Size(50, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             onPressed: _numberGameAnswered
                 ? null
                 : () {
@@ -602,7 +1085,13 @@ Widget _numberTapGame() {
 
                     setState(() {});
                   },
-            child: Text("$n"),
+            child: Text(
+              "$n",
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           );
         }).toList(),
       ),
@@ -623,24 +1112,69 @@ Widget _numberTapGame() {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      const Text(
-        "Word-Color Match: Tap the word that matches the color!",
-        style: TextStyle(color: Colors.white, fontSize: 16),
+      Text(
+        "Word-Color Match",
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        "Tap the word that matches the color!",
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppTheme.textSecondary,
+        ),
         textAlign: TextAlign.center,
       ),
-      const SizedBox(height: 10),
-      Text(words[correct],
-          style: TextStyle(color: colors[correct], fontSize: 28)),
-      const SizedBox(height: 10),
+      const SizedBox(height: 24),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.3),
+          ),
+        ),
+        child: Text(
+          words[correct],
+          style: GoogleFonts.poppins(
+            color: colors[correct],
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      const SizedBox(height: 24),
       Wrap(
-        spacing: 10,
+        spacing: 12,
+        runSpacing: 12,
+        alignment: WrapAlignment.center,
         children: List.generate(4, (i) {
           return ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 215, 107, 186),
+              foregroundColor: AppTheme.textOnPrimary,
+              minimumSize: const Size(80, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+            ),
             onPressed: () {
               if (i == correct) _score++;
               _nextGame();
             },
-            child: Text(words[i]),
+            child: Text(
+              words[i],
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           );
         }),
       )
@@ -656,74 +1190,74 @@ Widget _numberTapGame() {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Memory & Focus Test")),
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [Colors.deepPurple, Colors.indigo])),
-        child: Center(
-          child: _gameOver
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: ThemeHelpers.dashboardBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header section with themed avatar and title
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                child: Row(
                   children: [
-                    Text("Test Finished! Score: $_score",
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("Back to Dashboard")),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: AppTheme.textOnPrimary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ThemeHelpers.themedAvatar(
+                      size: 50,
+                      icon: Icons.psychology_outlined, // Memory/brain icon
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Memory & Focus Test',
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textOnPrimary,
+                        ),
+                      ),
+                    ),
                   ],
-                )
-              : (_gameOrder.isEmpty
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Ready for your Memory Test?",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _startTest,
-                          child: const Text("Start Test"),
-                        )
-                      ],
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Game ${_currentGameIndex + 1} of 10",
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 18)),
-                        SizedBox(
-  width: 60,
-  height: 60,
-  child: Stack(
-    alignment: Alignment.center,
-    children: [
-      CircularProgressIndicator(
-        value: _timeLeft / 10,
-        backgroundColor: Colors.white.withOpacity(0.3),
-        color: Colors.orange,
-        strokeWidth: 6,
-      ),
-      Text(
-        "$_timeLeft s",
-        style: const TextStyle(
-            color: Colors.white, fontWeight: FontWeight.bold),
-      )
-    ],
-  ),
-),
-
-                        const SizedBox(height: 20),
-                        _buildGame(_gameOrder[_currentGameIndex]),
-                      ],
-                    )),
+                ),
+              ),
+              // Content section
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Center(
+                      child: _gameOver
+                          ? _buildGameOverScreen()
+                          : (_gameOrder.isEmpty
+                              ? _buildStartScreen()
+                              : _buildGameScreen()),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

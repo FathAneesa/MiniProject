@@ -53,7 +53,7 @@ class StudDash extends StatelessWidget {
 
                 ThemeHelpers.dashboardButton(
                   text: "Add Academic Data",
-                  backgroundColor: AppTheme.accentBlue,
+                  backgroundColor: const Color.fromARGB(255, 215, 107, 186), // Soft rose pink for adding data
                   onPressed: () async {
                     final result = await Navigator.push(
                       context,
@@ -81,7 +81,7 @@ class StudDash extends StatelessWidget {
 
                 ThemeHelpers.dashboardButton(
                   text: "View Academic Data",
-                  backgroundColor: AppTheme.accentOrange,
+                  backgroundColor: const Color.fromARGB(255, 230, 140, 200), // Light pink for viewing
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -95,7 +95,7 @@ class StudDash extends StatelessWidget {
 
                 ThemeHelpers.dashboardButton(
                   text: "Take Memory/Focus Test",
-                  backgroundColor: AppTheme.accentTeal,
+                  backgroundColor: const Color.fromARGB(255, 199, 76, 173), // Rich pink for testing
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -107,7 +107,7 @@ class StudDash extends StatelessWidget {
 
                 ThemeHelpers.dashboardButton(
                   text: "View Daily Recommendation",
-                  backgroundColor: AppTheme.accentViolet,
+                  backgroundColor: const Color.fromARGB(255, 207, 89, 181), // Medium pink for recommendations
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -123,7 +123,7 @@ class StudDash extends StatelessWidget {
 
                 ThemeHelpers.dashboardButton(
                   text: "View Weekly Progress",
-                  backgroundColor: AppTheme.accentPurple,
+                  backgroundColor: const Color.fromARGB(255, 184, 58, 158), // Deep pink for progress
                   onPressed: () {
                     // TODO: Implement weekly progress
                   },
@@ -132,7 +132,7 @@ class StudDash extends StatelessWidget {
 
                 ThemeHelpers.dashboardButton(
                   text: "Logout",
-                  backgroundColor: AppTheme.errorColor,
+                  backgroundColor: const Color.fromARGB(255, 169, 45, 142), // Dark pink for logout
                   onPressed: () {
                     ThemeHelpers.showThemedDialog(
                       context: context,

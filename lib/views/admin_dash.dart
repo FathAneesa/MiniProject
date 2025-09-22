@@ -49,7 +49,7 @@ class AdminDash extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Admin Dashboard',
+                      'Welcome Admin',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textOnPrimary,
@@ -68,7 +68,7 @@ class AdminDash extends StatelessWidget {
                       children: [
                         ThemeHelpers.dashboardButton(
                           text: "Add Student",
-                          backgroundColor: AppTheme.accentBlue,
+                          backgroundColor: const Color.fromARGB(255, 199, 76, 173),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -82,7 +82,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "View Student Details",
-                          backgroundColor: AppTheme.accentOrange,
+                          backgroundColor: const Color.fromARGB(255, 215, 107, 186),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -96,7 +96,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "Edit Student Details",
-                          backgroundColor: AppTheme.accentTeal,
+                          backgroundColor: const Color.fromARGB(255, 230, 140, 200),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -108,7 +108,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "Delete Student",
-                          backgroundColor: AppTheme.accentPurple,
+                          backgroundColor: const Color.fromARGB(255, 184, 58, 158),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -120,7 +120,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "View Weekly Analysis",
-                          backgroundColor: AppTheme.accentViolet,
+                          backgroundColor: const Color.fromARGB(255, 207, 89, 181),
                           onPressed: () {
                             // TODO: Navigate to Weekly Progress page
                           },
@@ -129,7 +129,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "Logout",
-                          backgroundColor: AppTheme.errorColor,
+                          backgroundColor: const Color.fromARGB(255, 169, 45, 142),
                           onPressed: () {
                             _logout(context);
                           },
