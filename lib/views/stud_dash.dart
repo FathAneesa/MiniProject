@@ -5,6 +5,7 @@ import 'view_academic.dart';
 import 'login_page.dart'; // ✅ Added for logout navigation
 import 'memory_test.dart';
 import 'rec.dart'; // Import the recommendations page
+import 'weekrec.dart'; // Import the weekly progress page
 import '../theme/app_theme.dart';
 import '../theme/theme_helpers.dart';
 
@@ -125,7 +126,12 @@ class StudDash extends StatelessWidget {
                   text: "View Weekly Progress",
                   backgroundColor: const Color.fromARGB(255, 184, 58, 158), // Deep pink for progress
                   onPressed: () {
-                    // TODO: Implement weekly progress
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => WeeklyProgressPage(studentId: studentId),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 15),

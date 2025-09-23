@@ -70,6 +70,44 @@ class _AddStudState extends State<AddStud> {
     if (!RegExp(r'^\d{4}-\d{2,4}$').hasMatch(value.trim())) {
       return 'Academic year format: 2023-2024 or 2023-24';
     }
+    
+    // Extract years from the format
+    List<String> parts = value.trim().split('-');
+    if (parts.length != 2) {
+      return 'Invalid academic year format';
+    }
+    
+    int startYear = int.tryParse(parts[0]) ?? 0;
+    int endYear = int.tryParse(parts[1]) ?? 0;
+    
+    // Handle 2-digit end year (e.g., 23 for 2023)
+    if (parts[1].length == 2) {
+      // Assume it's in the same century as the start year
+      int century = (startYear ~/ 100) * 100;
+      endYear = century + endYear;
+      
+      // Handle century boundary case (e.g., 99 -> 2099, but if start is 2023, it should be 2199 or 2099?)
+      // More reasonable: if endYear < startYear, add 100 years
+      if (endYear < startYear && startYear - endYear > 50) {
+        endYear += 100;
+      }
+    }
+    
+    // Validate that start year is less than end year
+    if (startYear >= endYear) {
+      return 'Start year must be less than end year';
+    }
+    
+    // Validate that the years are reasonable (not too far in the past or future)
+    int currentYear = DateTime.now().year;
+    if (startYear < currentYear - 10 || startYear > currentYear + 10) {
+      return 'Start year is not within a reasonable range';
+    }
+    
+    if (endYear < currentYear - 10 || endYear > currentYear + 10) {
+      return 'End year is not within a reasonable range';
+    }
+    
     return null;
   }
 

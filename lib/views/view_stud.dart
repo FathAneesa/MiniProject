@@ -123,9 +123,9 @@ class _ViewStudState extends State<ViewStud> {
                           .toList();
 
                       // Sort students to show newly added students first
-                      // Multiple sorting strategies to ensure newest entries appear first
+                      // MongoDB ObjectIds contain timestamp information, so sorting by _id descending shows newest first
                       students.sort((a, b) {
-                        // Strategy 1: Sort by ObjectId timestamp (most reliable for MongoDB)
+                        // Primary sort: by ObjectId timestamp (descending - newest first)
                         if (a.containsKey('_id') && b.containsKey('_id')) {
                           try {
                             // Handle different ObjectId formats from MongoDB
@@ -147,71 +147,44 @@ class _ViewStudState extends State<ViewStud> {
                             }
                             
                             // ObjectIds are lexicographically sortable by creation time
-                            int comparison = idStringB.compareTo(idStringA);
-                            if (comparison != 0) return comparison;
+                            // Descending order to show newest first
+                            int objectIdComparison = idStringB.compareTo(idStringA);
+                            if (objectIdComparison != 0) return objectIdComparison;
                           } catch (e) {
                             print('ObjectId sorting failed: $e');
                           }
                         }
                         
-                        // Strategy 2: Sort by UserID (newer users have higher numbers)
-                        if (a.containsKey('UserID') && b.containsKey('UserID')) {
-                          try {
-                            String userIdA = a['UserID']?.toString() ?? '';
-                            String userIdB = b['UserID']?.toString() ?? '';
-                            
-                            // Extract numbers from UserID (e.g., STU1234 -> 1234)
-                            RegExp numberRegex = RegExp(r'\d+');
-                            String? numA = numberRegex.firstMatch(userIdA)?.group(0);
-                            String? numB = numberRegex.firstMatch(userIdB)?.group(0);
-                            
-                            if (numA != null && numB != null) {
-                              int intA = int.parse(numA);
-                              int intB = int.parse(numB);
-                              int comparison = intB.compareTo(intA); // Descending
-                              if (comparison != 0) return comparison;
-                            }
-                          } catch (e) {
-                            print('UserID sorting failed: $e');
-                          }
-                        }
-                        
-                        // Strategy 3: Sort by Admission Number with better mixed format handling
+                        // Fallback: sort by Admission Number with proper numeric handling
                         String admissionA = a["Admission No"]?.toString() ?? "0";
                         String admissionB = b["Admission No"]?.toString() ?? "0";
                         
+                        // Handle mixed alphanumeric admission numbers properly
                         try {
-                          // Handle mixed alphanumeric admission numbers
-                          // Extract all numbers and use the largest one found
+                          // Extract all numbers from admission numbers
                           RegExp numberRegex = RegExp(r'\d+');
                           List<String> numbersA = numberRegex.allMatches(admissionA).map((m) => m.group(0)!).toList();
                           List<String> numbersB = numberRegex.allMatches(admissionB).map((m) => m.group(0)!).toList();
                           
+                          // If both have numbers, compare the largest number found
                           if (numbersA.isNotEmpty && numbersB.isNotEmpty) {
-                            // Use the largest number found in each admission number
                             int maxNumA = numbersA.map(int.parse).reduce((a, b) => a > b ? a : b);
                             int maxNumB = numbersB.map(int.parse).reduce((a, b) => a > b ? a : b);
-                            int comparison = maxNumB.compareTo(maxNumA); // Descending order
-                            if (comparison != 0) return comparison;
+                            // Descending order - larger numbers first (assuming newer students have higher numbers)
+                            return maxNumB.compareTo(maxNumA);
                           }
                           
                           // If one has numbers and other doesn't, prioritize the one with numbers
-                          if (numbersA.isNotEmpty && numbersB.isEmpty) return 1; // A has numbers, B doesn't - A is newer
-                          if (numbersA.isEmpty && numbersB.isNotEmpty) return -1; // B has numbers, A doesn't - B is newer
+                          if (numbersA.isNotEmpty && numbersB.isEmpty) return -1; // A has numbers, B doesn't - A is "newer"
+                          if (numbersA.isEmpty && numbersB.isNotEmpty) return 1; // B has numbers, A doesn't - B is "newer"
                           
                         } catch (e) {
-                          print('Advanced admission number sorting failed: $e');
+                          print('Numeric admission number sorting failed: $e');
                         }
                         
-                        // Final fallback: string comparison
+                        // Final fallback: string comparison (descending)
                         return admissionB.compareTo(admissionA);
                       });
-                      
-                      // Debug: Print the sorted order to console
-                      print('Students sorted order:');
-                      for (int i = 0; i < students.length && i < 5; i++) {
-                        print('${i + 1}. ${students[i]['Student Name']} (UserID: ${students[i]['UserID']}, Admission: ${students[i]['Admission No']})');
-                      }
 
                       return Padding(
                         padding: const EdgeInsets.all(16),
