@@ -104,18 +104,18 @@ class AdminDash extends StatelessWidget {
                             );
                           },
                         ),
-                        const SizedBox(height: 15),
+                        // const SizedBox(height: 15),
 
-                        ThemeHelpers.dashboardButton(
-                          text: "Delete Student",
-                          backgroundColor: const Color.fromARGB(255, 184, 58, 158),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => DeleteStudentPage()),
-                            );
-                          },
-                        ),
+                        // ThemeHelpers.dashboardButton(
+                        //   text: "Delete Student",
+                        //   backgroundColor: const Color.fromARGB(255, 184, 58, 158),
+                        //   onPressed: () {
+                        //     Navigator.push(
+                        //       context,
+                        //       MaterialPageRoute(builder: (context) => DeleteStudentPage()),
+                        //     );
+                        //   },
+                        // ),
                         const SizedBox(height: 15),
 
                         ThemeHelpers.dashboardButton(

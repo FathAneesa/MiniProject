@@ -181,25 +181,25 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 16),
                       ThemedWidgets.loadingIndicator(message: 'Logging in...'),
                     ],
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ForgotPasswordPage(),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Forgot password? Click here.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.primaryColor,
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                    // const SizedBox(height: 16),
+                    // GestureDetector(
+                    //   onTap: () {
+                    //     Navigator.push(
+                    //       context,
+                    //       MaterialPageRoute(
+                    //         builder: (context) => const ForgotPasswordPage(),
+                    //       ),
+                    //     );
+                    //   },
+                    //   child: Text(
+                    //     'Forgot password? Click here.',
+                    //     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    //       color: AppTheme.primaryColor,
+                    //       decoration: TextDecoration.underline,
+                    //       fontWeight: FontWeight.w600,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
