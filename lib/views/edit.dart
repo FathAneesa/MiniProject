@@ -160,10 +160,14 @@ class _EditPageState extends State<EditPage> {
                   child: ThemeHelpers.themedCard(
                     child: ListView(
                       children: [
+                        // Following the exact order from add_stud.dart
                         buildInputField("Student Name", "Student Name"),
+                        buildInputField("Department", "Department"),
                         buildInputField("Academic Year", "Academic Year"),
+                        buildInputField("Semester", "Semester"),
                         buildInputField("Phone", "Phone"),
                         buildInputField("Email", "Email"),
+                        buildInputField("Gender", "Gender"),
                         buildInputField("Date of Birth", "dob"),
                         buildInputField("Father Name", "Father Name"),
                         buildInputField("Mother Name", "Mother Name"),
@@ -171,9 +175,6 @@ class _EditPageState extends State<EditPage> {
                         buildInputField("Parent Phone", "Parent Phone"),
                         buildInputField("Guardian Name", "Guardian Name"),
                         buildInputField("Guardian Phone", "Guardian Phone"),
-                        buildInputField("Department", "Department"),
-                        buildInputField("Semester", "Semester"),
-                        buildInputField("Gender", "Gender"),
                         const SizedBox(height: 20),
                         ThemeHelpers.themedButton(
                           text: "Save Changes",
