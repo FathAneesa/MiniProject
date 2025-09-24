@@ -59,6 +59,7 @@ class AdminDash extends StatelessWidget {
               // Grid of circular cards
               Expanded(
                 child: Padding(
+<<<<<<< HEAD
                   padding: const EdgeInsets.all(16.0),
                   child: GridView.count(
                     crossAxisCount: 2,
@@ -114,6 +115,83 @@ class AdminDash extends StatelessWidget {
                         onTap: () => _logout(context),
                       ),
                     ],
+=======
+                  padding: const EdgeInsets.all(20),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ThemeHelpers.dashboardButton(
+                          text: "Add Student",
+                          backgroundColor: const Color.fromARGB(255, 199, 76, 173),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AddStud(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        ThemeHelpers.dashboardButton(
+                          text: "View Student Details",
+                          backgroundColor: const Color.fromARGB(255, 215, 107, 186),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ViewStud(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        ThemeHelpers.dashboardButton(
+                          text: "Edit Student Details",
+                          backgroundColor: const Color.fromARGB(255, 230, 140, 200),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const EditPage()),
+                            );
+                          },
+                        ),
+                        // const SizedBox(height: 15),
+
+                        // ThemeHelpers.dashboardButton(
+                        //   text: "Delete Student",
+                        //   backgroundColor: const Color.fromARGB(255, 184, 58, 158),
+                        //   onPressed: () {
+                        //     Navigator.push(
+                        //       context,
+                        //       MaterialPageRoute(builder: (context) => DeleteStudentPage()),
+                        //     );
+                        //   },
+                        // ),
+                        const SizedBox(height: 15),
+
+                        ThemeHelpers.dashboardButton(
+                          text: "View Weekly Analysis",
+                          backgroundColor: const Color.fromARGB(255, 207, 89, 181),
+                          onPressed: () {
+                            // TODO: Navigate to Weekly Progress page
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
+                        ThemeHelpers.dashboardButton(
+                          text: "Logout",
+                          backgroundColor: const Color.fromARGB(255, 169, 45, 142),
+                          onPressed: () {
+                            _logout(context);
+                          },
+                        ),
+                      ],
+                    ),
+>>>>>>> dcaafeaf03bd3d510c77338faab07230428e1989
                   ),
                 ),
               ),

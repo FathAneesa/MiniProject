@@ -70,6 +70,44 @@ class _AddStudState extends State<AddStud> {
     if (!RegExp(r'^\d{4}-\d{2,4}$').hasMatch(value.trim())) {
       return 'Academic year format: 2023-2024 or 2023-24';
     }
+    
+    // Extract years from the format
+    List<String> parts = value.trim().split('-');
+    if (parts.length != 2) {
+      return 'Invalid academic year format';
+    }
+    
+    int startYear = int.tryParse(parts[0]) ?? 0;
+    int endYear = int.tryParse(parts[1]) ?? 0;
+    
+    // Handle 2-digit end year (e.g., 23 for 2023)
+    if (parts[1].length == 2) {
+      // Assume it's in the same century as the start year
+      int century = (startYear ~/ 100) * 100;
+      endYear = century + endYear;
+      
+      // Handle century boundary case (e.g., 99 -> 2099, but if start is 2023, it should be 2199 or 2099?)
+      // More reasonable: if endYear < startYear, add 100 years
+      if (endYear < startYear && startYear - endYear > 50) {
+        endYear += 100;
+      }
+    }
+    
+    // Validate that start year is less than end year
+    if (startYear >= endYear) {
+      return 'Start year must be less than end year';
+    }
+    
+    // Validate that the years are reasonable (not too far in the past or future)
+    int currentYear = DateTime.now().year;
+    if (startYear < currentYear - 10 || startYear > currentYear + 10) {
+      return 'Start year is not within a reasonable range';
+    }
+    
+    if (endYear < currentYear - 10 || endYear > currentYear + 10) {
+      return 'End year is not within a reasonable range';
+    }
+    
     return null;
   }
 
@@ -133,7 +171,68 @@ class _AddStudState extends State<AddStud> {
     if (value == null || value.trim().isEmpty) {
       return 'Date of birth is required';
     }
+    
+    try {
+      // Parse the date from DD-MM-YYYY format
+      List<String> parts = value.trim().split('-');
+      if (parts.length != 3) {
+        return 'Invalid date format';
+      }
+      
+      int day = int.parse(parts[0]);
+      int month = int.parse(parts[1]);
+      int year = int.parse(parts[2]);
+      
+      // Validate individual components
+      if (day < 1 || day > 31) {
+        return 'Invalid day';
+      }
+      if (month < 1 || month > 12) {
+        return 'Invalid month';
+      }
+      if (year < 1950 || year > DateTime.now().year) {
+        return 'Invalid year';
+      }
+      
+      DateTime birthDate = DateTime(year, month, day);
+      DateTime today = DateTime.now();
+      DateTime minimumBirthDate = DateTime(today.year - 60, today.month, today.day); // Maximum 60 years old
+      DateTime maximumBirthDate = DateTime(today.year - 16, today.month, today.day); // Minimum 16 years old
+      
+      // Check if the birth date is today or in the future
+      if (birthDate.isAfter(today) || _isSameDate(birthDate, today)) {
+        return 'Date of birth cannot be today or in the future';
+      }
+      
+      // Calculate exact age in years
+      int age = today.year - birthDate.year;
+      if (today.month < birthDate.month || 
+          (today.month == birthDate.month && today.day < birthDate.day)) {
+        age--;
+      }
+      
+      // Check if the student is at least 16 years old
+      if (age < 16) {
+        return 'Student must be at least 16 years old (currently $age years)';
+      }
+      
+      // Check if the student is not older than 60 years
+      if (age > 60) {
+        return 'Student age cannot exceed 60 years (currently $age years)';
+      }
+      
+    } catch (e) {
+      return 'Invalid date format (DD-MM-YYYY required)';
+    }
+    
     return null;
+  }
+  
+  // Helper method to check if two dates are the same
+  bool _isSameDate(DateTime date1, DateTime date2) {
+    return date1.year == date2.year && 
+           date1.month == date2.month && 
+           date1.day == date2.day;
   }
 Future<void> _saveStudent() async {
   if (_formKey.currentState!.validate()) {
@@ -447,15 +546,41 @@ Future<void> _saveStudent() async {
                 readOnly: true,
                 validator: _validateDOB,
                 onTap: () async {
+                  DateTime today = DateTime.now();
+                  // More restrictive date constraints
+                  DateTime minimumDate = DateTime(today.year - 60, 1, 1); // 60 years ago (start of year)
+                  DateTime maximumDate = DateTime(today.year - 16, today.month, today.day); // Exactly 16 years ago
+                  
+                  // Ensure maximum date is not today or in the future
+                  if (maximumDate.isAfter(today) || _isSameDate(maximumDate, today)) {
+                    maximumDate = DateTime(today.year - 17, today.month, today.day);
+                  }
+                  
                   DateTime? picked = await showDatePicker(
                     context: context,
-                    initialDate: DateTime(2000),
-                    firstDate: DateTime(1980),
-                    lastDate: DateTime.now(),
+                    initialDate: DateTime(today.year - 20, today.month, today.day), // Default to 20 years ago
+                    firstDate: minimumDate, // Minimum: 60 years ago
+                    lastDate: maximumDate,  // Maximum: at least 16 years ago
+                    helpText: 'Select Date of Birth (Age: 16-60 years)',
+                    errorFormatText: 'Enter a valid date',
+                    errorInvalidText: 'Student must be 16-60 years old',
+                    confirmText: 'SELECT',
+                    cancelText: 'CANCEL',
                   );
                   if (picked != null) {
+                    // Double-check the selected date is valid
+                    DateTime now = DateTime.now();
+                    if (picked.isAfter(now) || _isSameDate(picked, now)) {
+                      ThemeHelpers.showThemedSnackBar(
+                        context,
+                        message: "Cannot select today's date or future date as birth date",
+                        isError: true,
+                      );
+                      return;
+                    }
+                    
                     _dobController.text =
-                        "${picked.day}-${picked.month}-${picked.year}";
+                        "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
                   }
                 },
               ),

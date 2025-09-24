@@ -29,10 +29,10 @@ MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = os.getenv("DB_NAME", "wellnessDB")
 
 # Email configuration
-SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+SMTP_SERVER = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_ADDRESS = os.getenv("EMAIL_USER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASS")
 
 if not MONGO_URI:
     raise RuntimeError("❌ MONGO_URI is not set in .env file")

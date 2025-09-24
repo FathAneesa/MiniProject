@@ -27,10 +27,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   bool _isLoading = false;
   String? _emailError;
   String _verificationToken = '';
-  String _debugMessage = 'Ready to send OTP';
-  int _testCounter = 0; // Test counter for setState debugging
 
-  // Step 1: Check if email exists in database
+  // Step 1: Check if email exists in database - USER-FRIENDLY VERSION
   Future<void> _checkEmailExists() async {
     if (_emailController.text.trim().isEmpty) {
       setState(() {
@@ -60,7 +58,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         body: jsonEncode({
           'email': _emailController.text.trim(),
         }),
-      );
+      ).timeout(Duration(seconds: 30)); // Add timeout
 
       print('API URL: $apiBaseUrl/auth/check-email'); // Debug log
       print('Response status: ${response.statusCode}'); // Debug log
@@ -72,6 +70,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           setState(() {
             _isEmailVerified = true;
             _emailError = null;
+            _isLoading = false; // CRITICAL: Reset loading state
           });
           ThemeHelpers.showThemedSnackBar(
             context,
@@ -81,6 +80,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           setState(() {
             _emailError = 'The entered email id is not registered';
             _isEmailVerified = false;
+            _isLoading = false; // CRITICAL: Reset loading state
           });
         }
         return;
@@ -92,10 +92,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     // Fallback: Check against existing students database
     try {
       print('Trying fallback - checking students database'); // Debug log
+      print('Using API URL: $apiBaseUrl/students'); // Debug log to verify URL
       final response = await http.get(
         Uri.parse('$apiBaseUrl/students'),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(Duration(seconds: 30)); // Add timeout
 
       print('Students API status: ${response.statusCode}'); // Debug log
       
@@ -111,6 +112,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           setState(() {
             _isEmailVerified = true;
             _emailError = null;
+            _isLoading = false; // CRITICAL: Reset loading state
           });
           ThemeHelpers.showThemedSnackBar(
             context,
@@ -120,12 +122,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           setState(() {
             _emailError = 'The entered email id is not registered';
             _isEmailVerified = false;
+            _isLoading = false; // CRITICAL: Reset loading state
           });
         }
       } else {
         setState(() {
           _emailError = 'Error checking email. Status: ${response.statusCode}. Please ensure your backend is running.';
           _isEmailVerified = false;
+          _isLoading = false; // CRITICAL: Reset loading state
         });
       }
     } catch (e) {
@@ -133,45 +137,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       setState(() {
         _emailError = 'Network error: $e. Please check if your backend server is running.';
         _isEmailVerified = false;
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        _isLoading = false; // CRITICAL: Reset loading state
       });
     }
   }
 
-  // TEST METHOD - Simple setState test
-  void _testSetState() {
-    print('🧪 Testing setState...');
-    setState(() {
-      _testCounter++;
-      _debugMessage = 'Counter: $_testCounter';
-    });
-    print('🧪 setState completed');
-  }
 
-  // TEST METHOD - Test boolean setState specifically
-  void _testBooleanSetState() {
-    print('🔍 Testing BOOLEAN setState...');
-    setState(() {
-      _isOtpSent = !_isOtpSent;  // Toggle the boolean
-      _isLoading = !_isLoading;  // Toggle the boolean
-      _debugMessage = 'Boolean test: OTP=${_isOtpSent}, Loading=${_isLoading}';
-    });
-    print('🔍 Boolean setState completed - OTP: $_isOtpSent, Loading: $_isLoading');
-  }
 
-  // Step 2: Send OTP to verified email - IMMEDIATE VERSION (NO DELAYS)
-  void _sendOTP() {
-    print('🔥 _sendOTP method called - IMMEDIATE VERSION');
-    
+  // Step 2: Send OTP to verified email - USER-FRIENDLY VERSION
+  Future<void> _sendOTP() async {
     if (!_isEmailVerified) {
-      print('❌ Email not verified');
-      setState(() {
-        _debugMessage = 'Email not verified!';
-        _testCounter++; // Also increment test counter to verify setState works
-      });
       ThemeHelpers.showThemedSnackBar(
         context,
         message: 'Please verify your email first.',
@@ -180,28 +155,66 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
 
-    print('✅ Email verified, setting states IMMEDIATELY');
-    
-    // Set all states immediately - no delays, no timers, no async
     setState(() {
-      _debugMessage = 'OTP enabled immediately!';
-      _testCounter++; // Increment test counter to verify this setState works
-      _isOtpSent = true;
-      _verificationToken = 'mock-token-123';
-      _isLoading = false;  // Keep loading false
+      _isLoading = true;
     });
-    
-    print('✅ States set immediately - counter is now: $_testCounter');
-    
-    ThemeHelpers.showThemedSnackBar(
-      context,
-      message: '📧 Instant OTP! Use: 123456',
-    );
-    
-    print('✅ Immediate OTP setup completed');
+
+    try {
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/auth/send-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+        }),
+      ).timeout(Duration(seconds: 30)); // Add timeout to prevent infinite waiting
+
+      print('Send OTP API status: ${response.statusCode}');
+      print('Send OTP API response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          setState(() {
+            _isOtpSent = true;
+            _verificationToken = data['token'] ?? '';
+            _isLoading = false; // CRITICAL: Reset loading state
+          });
+          
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: data['message'] ?? 'OTP sent to your email successfully!',
+          );
+        } else {
+          setState(() {
+            _isLoading = false; // CRITICAL: Reset loading state on error
+          });
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: data['message'] ?? 'Failed to send OTP',
+            isError: true,
+          );
+        }
+      } else {
+        setState(() {
+          _isLoading = false; // CRITICAL: Reset loading state on HTTP error
+        });
+        ThemeHelpers.showThemedSnackBar(
+          context,
+          message: 'Failed to send OTP. Status: ${response.statusCode}',
+          isError: true,
+        );
+      }
+    } catch (e) {
+      print('Send OTP error: $e');
+      setState(() {
+        _isLoading = false; // CRITICAL: Reset loading state on exception
+      });
+      // Show mock OTP dialog as fallback
+      _showMockOTPDialog();
+    }
   }
   
-  // Helper method to show mock OTP dialog
+  // Helper method to show mock OTP dialog - USER-FRIENDLY VERSION
   void _showMockOTPDialog() {
     showDialog(
       context: context,
@@ -215,16 +228,21 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                // CRITICAL: Reset loading state when canceled
+                setState(() {
+                  _isLoading = false;
+                });
               },
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // Enable mock OTP
+                // Enable mock OTP and CRITICAL: Reset loading state
                 setState(() {
                   _isOtpSent = true;
                   _verificationToken = 'mock-token-123';
+                  _isLoading = false; // CRITICAL: Reset loading state
                 });
                 ThemeHelpers.showThemedSnackBar(
                   context,
@@ -239,7 +257,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  // Step 3: Verify OTP
+  // Step 3: Verify OTP - USER-FRIENDLY VERSION
   Future<void> _verifyOtp() async {
     if (_otpController.text.trim().isEmpty) {
       ThemeHelpers.showThemedSnackBar(
@@ -264,7 +282,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     });
 
     try {
-      // Try real OTP verification first
       final response = await http.post(
         Uri.parse('$apiBaseUrl/auth/verify-otp'),
         headers: {'Content-Type': 'application/json'},
@@ -273,7 +290,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           'otp': _otpController.text.trim(),
           'token': _verificationToken,
         }),
-      );
+      ).timeout(Duration(seconds: 30)); // Add timeout
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -281,42 +298,72 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           setState(() {
             _isOtpVerified = true;
             _verificationToken = data['resetToken'] ?? _verificationToken;
+            _isLoading = false; // CRITICAL: Reset loading state
           });
           ThemeHelpers.showThemedSnackBar(
             context,
             message: 'OTP verified successfully! You can now reset your password.',
           );
           return;
+        } else {
+          setState(() {
+            _isLoading = false; // CRITICAL: Reset loading state on error
+          });
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: data['message'] ?? 'Invalid OTP',
+            isError: true,
+          );
+        }
+      } else {
+        // Try fallback verification for development/testing
+        if (_otpController.text.trim() == '123456') {
+          setState(() {
+            _isOtpVerified = true;
+            _verificationToken = 'reset-token-123';
+            _isLoading = false; // CRITICAL: Reset loading state
+          });
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: 'OTP verified successfully! (Test mode)',
+          );
+        } else {
+          setState(() {
+            _isLoading = false; // CRITICAL: Reset loading state
+          });
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: 'Invalid OTP. Check your email or use "123456" for testing.',
+            isError: true,
+          );
         }
       }
     } catch (e) {
-      print('Real OTP verification failed, using mock: $e');
-    }
-
-    // Fallback: Mock OTP verification for testing
-    if (_otpController.text.trim() == '123456') {
+      print('OTP verification error: $e');
       setState(() {
-        _isOtpVerified = true;
-        _verificationToken = 'reset-token-123';
+        _isLoading = false; // CRITICAL: Reset loading state on exception
       });
-      ThemeHelpers.showThemedSnackBar(
-        context,
-        message: 'OTP verified successfully! You can now reset your password.',
-      );
-    } else {
-      ThemeHelpers.showThemedSnackBar(
-        context,
-        message: 'Invalid OTP. Use "123456" for testing.',
-        isError: true,
-      );
+      // Fallback: Mock OTP verification for testing
+      if (_otpController.text.trim() == '123456') {
+        setState(() {
+          _isOtpVerified = true;
+          _verificationToken = 'reset-token-123';
+        });
+        ThemeHelpers.showThemedSnackBar(
+          context,
+          message: 'OTP verified successfully! (Offline mode)',
+        );
+      } else {
+        ThemeHelpers.showThemedSnackBar(
+          context,
+          message: 'Network error. Use "123456" for testing.',
+          isError: true,
+        );
+      }
     }
-    
-    setState(() {
-      _isLoading = false;
-    });
   }
 
-  // Step 4: Change password in database
+  // Step 4: Change password in database - USER-FRIENDLY VERSION
   Future<void> _changePassword() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -353,11 +400,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           'newPassword': _newPasswordController.text,
           'token': _verificationToken,
         }),
-      );
+      ).timeout(Duration(seconds: 30)); // Add timeout
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
+          setState(() {
+            _isLoading = false; // CRITICAL: Reset loading state
+          });
           ThemeHelpers.showThemedSnackBar(
             context,
             message: 'Password reset successfully! Please login with your new password.',
@@ -369,6 +419,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             }
           });
         } else {
+          setState(() {
+            _isLoading = false; // CRITICAL: Reset loading state on error
+          });
           ThemeHelpers.showThemedSnackBar(
             context,
             message: data['message'] ?? 'Failed to reset password. Please try again.',
@@ -376,6 +429,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           );
         }
       } else {
+        setState(() {
+          _isLoading = false; // CRITICAL: Reset loading state on HTTP error
+        });
         ThemeHelpers.showThemedSnackBar(
           context,
           message: 'Failed to reset password. Please try again.',
@@ -383,15 +439,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         );
       }
     } catch (e) {
+      setState(() {
+        _isLoading = false; // CRITICAL: Reset loading state on exception
+      });
       ThemeHelpers.showThemedSnackBar(
         context,
         message: 'Network error. Please check your connection.',
         isError: true,
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -635,45 +690,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
             ],
           ),
-        // Always show debug info when email is verified
-        if (_isEmailVerified)
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.yellow.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'DEBUG: $_debugMessage | Loading: $_isLoading | OTP Sent: $_isOtpSent',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _testSetState,
-                          child: Text('Test Counter ($_testCounter)'),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _testBooleanSetState,
-                          child: const Text('Test Booleans'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+
         if (_isEmailVerified && !_isOtpSent)
           Padding(
             padding: const EdgeInsets.only(top: 8),

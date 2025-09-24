@@ -122,6 +122,70 @@ class _ViewStudState extends State<ViewStud> {
                           )
                           .toList();
 
+                      // Sort students to show newly added students first
+                      // MongoDB ObjectIds contain timestamp information, so sorting by _id descending shows newest first
+                      students.sort((a, b) {
+                        // Primary sort: by ObjectId timestamp (descending - newest first)
+                        if (a.containsKey('_id') && b.containsKey('_id')) {
+                          try {
+                            // Handle different ObjectId formats from MongoDB
+                            dynamic idA = a['_id'];
+                            dynamic idB = b['_id'];
+                            
+                            String idStringA, idStringB;
+                            
+                            if (idA is Map && idA.containsKey('\$oid')) {
+                              idStringA = idA['\$oid'];
+                            } else {
+                              idStringA = idA.toString();
+                            }
+                            
+                            if (idB is Map && idB.containsKey('\$oid')) {
+                              idStringB = idB['\$oid'];
+                            } else {
+                              idStringB = idB.toString();
+                            }
+                            
+                            // ObjectIds are lexicographically sortable by creation time
+                            // Descending order to show newest first
+                            int objectIdComparison = idStringB.compareTo(idStringA);
+                            if (objectIdComparison != 0) return objectIdComparison;
+                          } catch (e) {
+                            print('ObjectId sorting failed: $e');
+                          }
+                        }
+                        
+                        // Fallback: sort by Admission Number with proper numeric handling
+                        String admissionA = a["Admission No"]?.toString() ?? "0";
+                        String admissionB = b["Admission No"]?.toString() ?? "0";
+                        
+                        // Handle mixed alphanumeric admission numbers properly
+                        try {
+                          // Extract all numbers from admission numbers
+                          RegExp numberRegex = RegExp(r'\d+');
+                          List<String> numbersA = numberRegex.allMatches(admissionA).map((m) => m.group(0)!).toList();
+                          List<String> numbersB = numberRegex.allMatches(admissionB).map((m) => m.group(0)!).toList();
+                          
+                          // If both have numbers, compare the largest number found
+                          if (numbersA.isNotEmpty && numbersB.isNotEmpty) {
+                            int maxNumA = numbersA.map(int.parse).reduce((a, b) => a > b ? a : b);
+                            int maxNumB = numbersB.map(int.parse).reduce((a, b) => a > b ? a : b);
+                            // Descending order - larger numbers first (assuming newer students have higher numbers)
+                            return maxNumB.compareTo(maxNumA);
+                          }
+                          
+                          // If one has numbers and other doesn't, prioritize the one with numbers
+                          if (numbersA.isNotEmpty && numbersB.isEmpty) return -1; // A has numbers, B doesn't - A is "newer"
+                          if (numbersA.isEmpty && numbersB.isNotEmpty) return 1; // B has numbers, A doesn't - B is "newer"
+                          
+                        } catch (e) {
+                          print('Numeric admission number sorting failed: $e');
+                        }
+                        
+                        // Final fallback: string comparison (descending)
+                        return admissionB.compareTo(admissionA);
+                      });
+
                       return Padding(
                         padding: const EdgeInsets.all(16),
                         child: SingleChildScrollView(
@@ -180,14 +244,36 @@ class _ViewStudState extends State<ViewStud> {
                                 rows: students.asMap().entries.map((entry) {
                                   final index = entry.key;
                                   final student = entry.value;
+                                  
+                                  // Add a visual indicator for recently added students (first 3)
+                                  final isRecentlyAdded = index < 3;
+                                  
                                   return DataRow(
                                     color: MaterialStateProperty.all(
-                                      index.isEven 
-                                        ? AppTheme.cardBackground.withOpacity(0.1)
-                                        : Colors.transparent,
+                                      isRecentlyAdded
+                                        ? AppTheme.primaryColor.withOpacity(0.1) // Highlight recent entries
+                                        : index.isEven 
+                                          ? AppTheme.cardBackground.withOpacity(0.1)
+                                          : Colors.transparent,
                                     ),
                                     cells: [
-                                      DataCell(Text(student["Student Name"]?.toString() ?? "")),
+                                      DataCell(
+                                        Row(
+                                          children: [
+                                            if (isRecentlyAdded) ...[
+                                              Icon(
+                                                Icons.fiber_new,
+                                                color: AppTheme.primaryColor,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 4),
+                                            ],
+                                            Expanded(
+                                              child: Text(student["Student Name"]?.toString() ?? ""),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                       DataCell(Text(student["Admission No"]?.toString() ?? "")),
                                       DataCell(Text(student["Department"]?.toString() ?? "")),
                                       DataCell(Text(student["Academic Year"]?.toString() ?? "")),

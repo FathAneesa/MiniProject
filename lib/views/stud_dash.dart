@@ -3,7 +3,12 @@ import 'add_academic.dart';
 import 'view_academic.dart';
 import 'login_page.dart';
 import 'memory_test.dart';
+<<<<<<< HEAD
 import 'rec.dart';
+=======
+import 'rec.dart'; // Import the recommendations page
+import 'weekrec.dart'; // Import the weekly progress page
+>>>>>>> dcaafeaf03bd3d510c77338faab07230428e1989
 import '../theme/app_theme.dart';
 import '../theme/theme_helpers.dart';
 
@@ -151,8 +156,121 @@ class StudDash extends StatelessWidget {
                     ],
                   ),
                 ),
+<<<<<<< HEAD
               ),
             ],
+=======
+                const SizedBox(height: 30),
+
+                ThemeHelpers.dashboardButton(
+                  text: "Add Academic Data",
+                  backgroundColor: const Color.fromARGB(255, 215, 107, 186), // Soft rose pink for adding data
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddAcademicPage(studentId: studentId),
+                      ),
+                    );
+                    
+                    // If academic data was updated, show notification
+                    if (result == true && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '✅ Academic data saved! Your recommendations will be updated.',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: AppTheme.successColor,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "View Academic Data",
+                  backgroundColor: const Color.fromARGB(255, 230, 140, 200), // Light pink for viewing
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ViewAcademicPage(studentId: studentId),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "Take Memory/Focus Test",
+                  backgroundColor: const Color.fromARGB(255, 199, 76, 173), // Rich pink for testing
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MemoryTestPage(studentId: studentId)),
+                    );
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "View Daily Recommendation",
+                  backgroundColor: const Color.fromARGB(255, 207, 89, 181), // Medium pink for recommendations
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RecommendationPage(
+                          studentId: studentId,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "View Weekly Progress",
+                  backgroundColor: const Color.fromARGB(255, 184, 58, 158), // Deep pink for progress
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => WeeklyProgressPage(studentId: studentId),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 15),
+
+                ThemeHelpers.dashboardButton(
+                  text: "Logout",
+                  backgroundColor: const Color.fromARGB(255, 169, 45, 142), // Dark pink for logout
+                  onPressed: () {
+                    ThemeHelpers.showThemedDialog(
+                      context: context,
+                      title: "Logout",
+                      content: "Are you sure you want to logout?",
+                      cancelText: "Cancel",
+                      confirmText: "Logout",
+                      onConfirm: () {
+                        Navigator.of(context).pop();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+>>>>>>> dcaafeaf03bd3d510c77338faab07230428e1989
           ),
         ),
       ),
