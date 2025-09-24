@@ -22,24 +22,137 @@ class _AddAcademicPageState extends State<AddAcademicPage> {
   TextEditingController focusLevelController = TextEditingController();
   int overallMark = 0;
   bool _isConfirming = false;
+  List<String> _markErrors = []; // To track validation errors
 
   void calculateOverallMark() {
     int total = 0;
     int count = 0;
-    for (var subj in subjects) {
+    _markErrors.clear(); // Clear previous errors
+    
+    for (int i = 0; i < subjects.length; i++) {
+      var subj = subjects[i];
       if (subj["mark"].toString().isNotEmpty) {
         int? mark = int.tryParse(subj["mark"].toString());
         if (mark != null) {
-          total += mark;
-          count++;
+          // Validate mark is between 0 and 100
+          if (mark < 0 || mark > 100) {
+            if (_markErrors.length <= i) {
+              _markErrors.add("Mark must be between 0 and 100");
+            } else {
+              _markErrors[i] = "Mark must be between 0 and 100";
+            }
+          } else {
+            if (_markErrors.length <= i) {
+              _markErrors.add(""); // No error
+            } else {
+              _markErrors[i] = ""; // No error
+            }
+            total += mark;
+            count++;
+          }
+        } else {
+          if (_markErrors.length <= i) {
+            _markErrors.add("Invalid number format");
+          } else {
+            _markErrors[i] = "Invalid number format";
+          }
+        }
+      } else {
+        if (_markErrors.length <= i) {
+          _markErrors.add(""); // No error for empty field
+        } else {
+          _markErrors[i] = ""; // No error for empty field
         }
       }
     }
+    
     setState(() {
       overallMark = (count > 0) ? (total ~/ count) : 0;
     });
   }
+
 Future<void> saveAcademicData() async {
+  // Validate all marks before saving
+  bool hasErrors = false;
+  _markErrors.clear();
+  
+  for (int i = 0; i < subjects.length; i++) {
+    var subj = subjects[i];
+    if (subj["mark"].toString().isNotEmpty) {
+      int? mark = int.tryParse(subj["mark"].toString());
+      if (mark != null) {
+        if (mark < 0 || mark > 100) {
+          if (_markErrors.length <= i) {
+            _markErrors.add("Mark must be between 0 and 100");
+          } else {
+            _markErrors[i] = "Mark must be between 0 and 100";
+          }
+          hasErrors = true;
+        } else {
+          if (_markErrors.length <= i) {
+            _markErrors.add("");
+          } else {
+            _markErrors[i] = "";
+          }
+        }
+      } else {
+        if (_markErrors.length <= i) {
+          _markErrors.add("Invalid number format");
+        } else {
+          _markErrors[i] = "Invalid number format";
+        }
+        hasErrors = true;
+      }
+    } else {
+      if (_markErrors.length <= i) {
+        _markErrors.add("");
+      } else {
+        _markErrors[i] = "";
+      }
+    }
+  }
+  
+  // Also validate that subjects have names
+  for (int i = 0; i < subjects.length; i++) {
+    var subj = subjects[i];
+    if (subj["name"].toString().isEmpty) {
+      hasErrors = true;
+      // We won't show an error for this since it's not related to marks validation
+    }
+  }
+  
+  // Validate study hours and focus level
+  if (studyHoursController.text.isNotEmpty) {
+    double? studyHours = double.tryParse(studyHoursController.text);
+    if (studyHours == null || studyHours < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Study hours must be a valid positive number")),
+      );
+      setState(() => _isConfirming = false);
+      return;
+    }
+  }
+  
+  if (focusLevelController.text.isNotEmpty) {
+    double? focusLevel = double.tryParse(focusLevelController.text);
+    if (focusLevel == null || focusLevel < 0 || focusLevel > 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Focus level must be between 0 and 10")),
+      );
+      setState(() => _isConfirming = false);
+      return;
+    }
+  }
+
+  if (hasErrors) {
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please correct the errors in marks before saving")),
+    );
+    setState(() => _isConfirming = false);
+    return;
+  }
+
   try {
     final url = Uri.parse("$apiBaseUrl/academics/add");
 
@@ -73,6 +186,8 @@ Future<void> saveAcademicData() async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Error: $e")),
     );
+  } finally {
+    setState(() => _isConfirming = false);
   }
 }
 
@@ -172,95 +287,107 @@ Future<void> saveAcademicData() async {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Expanded(
-                          flex: 3,
-                          child: TextField(
-                            decoration: InputDecoration(
-                              labelText: "Subject",
-                              labelStyle: GoogleFonts.poppins(
-                                color: AppTheme.textSecondary,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppTheme.primaryColor.withOpacity(0.3),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  labelText: "Subject",
+                                  labelStyle: GoogleFonts.poppins(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: AppTheme.primaryColor.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: AppTheme.primaryColor.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: AppTheme.primaryColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
                                 ),
+                                onChanged: (val) {
+                                  subjects[index]["name"] = val;
+                                },
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppTheme.primaryColor.withOpacity(0.3),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: AppTheme.primaryColor,
-                                  width: 2,
-                                ),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
                             ),
-                            onChanged: (val) {
-                              subjects[index]["name"] = val;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: "Mark",
-                              labelStyle: GoogleFonts.poppins(
-                                color: AppTheme.textSecondary,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppTheme.primaryColor.withOpacity(0.3),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText: "Mark",
+                                  labelStyle: GoogleFonts.poppins(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: AppTheme.primaryColor.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: AppTheme.primaryColor.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: AppTheme.primaryColor,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  // Show error text if there's a validation error
+                                  errorText: index < _markErrors.length && _markErrors[index].isNotEmpty 
+                                    ? _markErrors[index] 
+                                    : null,
                                 ),
+                                onChanged: (val) {
+                                  subjects[index]["mark"] = val;
+                                  calculateOverallMark();
+                                },
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppTheme.primaryColor.withOpacity(0.3),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: AppTheme.primaryColor,
-                                  width: 2,
-                                ),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
                             ),
-                            onChanged: (val) {
-                              subjects[index]["mark"] = val;
-                              calculateOverallMark();
-                            },
-                          ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: Icon(
+                                Icons.delete,
+                                color: AppTheme.errorColor,
+                                size: 24,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  subjects.removeAt(index);
+                                  // Also remove the error for this index
+                                  if (index < _markErrors.length) {
+                                    _markErrors.removeAt(index);
+                                  }
+                                  calculateOverallMark();
+                                });
+                              },
+                            )
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: Icon(
-                            Icons.delete,
-                            color: AppTheme.errorColor,
-                            size: 24,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              subjects.removeAt(index);
-                              calculateOverallMark();
-                            });
-                          },
-                        )
                       ],
                     ),
                   ),
@@ -275,6 +402,7 @@ Future<void> saveAcademicData() async {
                 onPressed: () {
                   setState(() {
                     subjects.add({"name": "", "mark": ""});
+                    _markErrors.add(""); // Add empty error for new subject
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -419,7 +547,6 @@ Future<void> saveAcademicData() async {
                     : () async {
                         setState(() => _isConfirming = true);
                         await saveAcademicData();
-                        setState(() => _isConfirming = false);
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 199, 76, 173),
