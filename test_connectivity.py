@@ -35,9 +35,9 @@ def test_connection(base_url):
 
 def main():
     urls_to_test = [
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://192.168.1.230:8000"
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "http://192.168.1.230:8081"
     ]
     
     print("🚀 Backend Connectivity Test")

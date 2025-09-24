@@ -13,7 +13,7 @@ from bson import ObjectId
 import random
 import smtplib
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId, json_util
 import json
@@ -399,7 +399,7 @@ async def login_user(user: User):
         else:
             response_data["user_data"] = None
 
-    # ✅ Save login activity for monitoring
+    # ✅ Save login activity for monitoring with timezone-aware datetime
     logins_collection = app.mongodb["logins"]
     await logins_collection.insert_one({
         "username": user.username,
@@ -667,18 +667,98 @@ async def delete_student_by_admission_no(admission_no: str):
 async def monitor():
     """Return the last 10 login activities."""
     logins_collection = app.mongodb["logins"]
+    students_collection = app.mongodb["Students"]
 
-    cursor = logins_collection.find().sort("time", -1).limit(10)
+    # Fix timezone issue by adjusting for the 3-hour offset
+    # This is a temporary fix until we update all datetime.utcnow() calls
+    cursor = logins_collection.find().sort("time", -1).limit(15)
     last_logins = []
+    count = 0
+    
     async for login in cursor:
-        last_logins.append({
-            "username": login["username"],
-            "role": login["role"],
-            "time": login["time"].strftime("%Y-%m-%d %H:%M:%S")
-        })
+        # Adjust for timezone offset (subtract 3 hours)
+        adjusted_time = login["time"] - timedelta(hours=3)
+        
+        username = login["username"]
+        role = login["role"]
+        student_name = "Unknown"
+        
+        # Only look up student name for student roles
+        if role == "student":
+            student = await students_collection.find_one({"UserID": username})
+            if student and "Student Name" in student:
+                student_name = student["Student Name"]
+        elif role == "admin":
+            student_name = "Admin User"
+        else:
+            student_name = f"{role.title()} User"
+        
+        login_entry = {
+            "username": username,
+            "role": role,
+            "time": adjusted_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "studentName": student_name
+        }
+        
+        last_logins.append(login_entry)
+        count += 1
+        
+        # Only take the first 10 after adjustment
+        if count >= 10:
+            break
 
     return {"last_logins": last_logins}
 
+
+@app.get("/weekly-app-usage", response_description="Get login statistics for the past week")
+async def get_weekly_app_usage():
+    """Return login statistics for all students for the past week."""
+    logins_coll = app.mongodb["logins"]
+    
+    # Calculate date range for the past 7 days
+    end_date = datetime.utcnow().date()
+    start_date = end_date - timedelta(days=7)
+    
+    # Initialize data structure for each day of the week
+    daily_stats = {}
+    for i in range(7):
+        date = start_date + timedelta(days=i)
+        daily_stats[date.isoformat()] = {
+            "date": date.isoformat(),
+            "entryCount": 0
+        }
+    
+    # Fetch login data for the past week
+    cursor = logins_coll.find({
+        "time": {
+            "$gte": datetime(start_date.year, start_date.month, start_date.day),
+            "$lte": datetime(end_date.year, end_date.month, end_date.day)
+        }
+    })
+    
+    # Count entries per day
+    async for record in cursor:
+        login_date = record["time"].date().isoformat()
+        if login_date in daily_stats:
+            daily_stats[login_date]["entryCount"] += 1
+    
+    # Convert to list format
+    daily_entries = list(daily_stats.values())
+    
+    # Calculate statistics
+    entry_counts = [day["entryCount"] for day in daily_entries]
+    total_entries = sum(entry_counts)
+    average_entries = total_entries / len(entry_counts) if entry_counts else 0
+    highest_entries = max(entry_counts) if entry_counts else 0
+    
+    return {
+        "daily_entries": daily_entries,
+        "statistics": {
+            "total_entries": total_entries,
+            "average_entries": round(average_entries, 2),
+            "highest_entries": highest_entries
+        }
+    }
 
 
 # ==========================
@@ -896,7 +976,7 @@ async def monitor():
 
 # 
 from fastapi import HTTPException
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 @app.get("/recommendations/{studentId}", response_description="Get or generate recommendations for a student")
 async def get_or_generate_recommendation(studentId: str):
