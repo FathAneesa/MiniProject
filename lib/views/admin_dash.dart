@@ -4,9 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'add_stud.dart';
 import 'view_stud.dart';
 import 'edit.dart';
-import 'delete.dart';
+// import 'delete.dart';
 import 'login_page.dart'; // For Logout navigation
-import 'view_week.dart'; // Import the new weekly analysis page
+import 'view_week.dart'; // Import the new weekly academic summary page
 import '../theme/app_theme.dart';
 import '../theme/theme_helpers.dart';
 
@@ -120,13 +120,13 @@ class AdminDash extends StatelessWidget {
                         const SizedBox(height: 15),
 
                         ThemeHelpers.dashboardButton(
-                          text: "View Weekly Analysis",
+                          text: "Weekly Academic Summary",
                           backgroundColor: const Color.fromARGB(255, 207, 89, 181),
                           onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const ViewWeeklyAnalysis(),
+                                builder: (_) => const ViewWeeklyAcademicSummary(),
                               ),
                             );
                           },

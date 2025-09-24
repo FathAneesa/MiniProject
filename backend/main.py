@@ -1001,8 +1001,21 @@ async def get_or_generate_recommendation(studentId: str):
 
     # Use only the latest academic data
     current_mark = latest_academic.get("overallMark", 0)
-    current_study_hours = float(latest_academic.get("studyHours", 0))
-    current_focus = float(latest_academic.get("focusLevel", 0))
+    
+    # Handle potential empty string values for study hours and focus level
+    study_hours_str = latest_academic.get("studyHours", "0")
+    focus_level_str = latest_academic.get("focusLevel", "0")
+    
+    # Convert to float with proper error handling
+    try:
+        current_study_hours = float(study_hours_str) if study_hours_str else 0.0
+    except (ValueError, TypeError):
+        current_study_hours = 0.0
+        
+    try:
+        current_focus = float(focus_level_str) if focus_level_str else 0.0
+    except (ValueError, TypeError):
+        current_focus = 0.0
 
     # 3️⃣ Fetch last 14 days of phone usage
     today = datetime.utcnow().date()
