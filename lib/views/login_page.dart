@@ -136,11 +136,13 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          ThemeHelpers.gradientBackground(
+          Container(
+            color: isDark ? Colors.black : Colors.white,
             child: const SizedBox.expand(),
           ),
           Center(
@@ -173,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                       style: isLoading ? 
                         AppButtonStyles.primaryButton.copyWith(
                           backgroundColor: MaterialStateProperty.all(
-                            AppTheme.primaryColor.withOpacity(0.6)
+                            const Color.fromARGB(255, 19, 9, 17).withOpacity(0.6)
                           ),
                         ) : AppButtonStyles.primaryButton,
                     ),
@@ -194,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'Forgot password? Click here.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.primaryColor,
+                          color: const Color.fromARGB(255, 6, 4, 6),
                           decoration: TextDecoration.underline,
                           fontWeight: FontWeight.w600,
                         ),

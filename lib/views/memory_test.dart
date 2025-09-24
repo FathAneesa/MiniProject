@@ -383,7 +383,7 @@ class _MemoryTestPageState extends State<MemoryTestPage> {
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppTheme.primaryColor,
+            color: const Color.fromARGB(255, 20, 10, 18),
           ),
         ),
         const SizedBox(height: 8),

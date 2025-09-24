@@ -43,6 +43,20 @@ class AppTheme {
     end: Alignment.bottomCenter,
   );
 
+  static var accentColor;
+
+  static var bottomNavBackground;
+
+  static var cardBackgroundLight1;
+
+  static var cardBackgroundLight2;
+
+  static var cardBackgroundLight3;
+
+  static var cardBackgroundLight4;
+
+  static var iconColor;
+
   // Main theme data
   static ThemeData get lightTheme {
     return ThemeData(
