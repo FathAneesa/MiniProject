@@ -606,6 +606,75 @@ async def delete_subject(studentId: str, index: int):
     return {"status": "success", "message": "Subject deleted successfully"}
 
 
+# === Update study hours and focus level in latest academic record ===
+@app.put("/academics/{studentId}/study-info", response_description="Update study hours and focus level")
+async def update_study_info(studentId: str, data: dict):
+    try:
+        academics_collection = app.mongodb["academics"]
+        students_collection = app.mongodb["Students"]
+        rec_coll = app.mongodb["recommendations"]
+
+        # Verify student exists
+        student = await students_collection.find_one({"UserID": studentId})
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+
+        # Find latest academic record
+        record = await academics_collection.find_one(
+            {"studentId": studentId},
+            sort=[("createdAt", -1)]
+        )
+
+        if not record:
+            raise HTTPException(status_code=404, detail="No academic data found")
+
+        # Update study hours and focus level
+        update_data = {
+            "studentId": studentId,
+            "studyHours": data.get("studyHours", record.get("studyHours")),
+            "focusLevel": data.get("focusLevel", record.get("focusLevel")),
+            "subjects": data.get("subjects", record.get("subjects")),
+            "overallMark": data.get("overallMark", record.get("overallMark"))
+        }
+
+        # Add timestamp
+        update_data["createdAt"] = datetime.utcnow()
+
+        # Insert new record with updated information
+        result = await academics_collection.insert_one(update_data)
+        
+        if result.inserted_id:
+            # Also update the recommendations collection with the new data
+            # Fetch the latest academic record we just inserted
+            latest_record = await academics_collection.find_one(
+                {"_id": result.inserted_id}
+            )
+            
+            if latest_record:
+                # Update recommendations with the new study hours and focus level
+                await rec_coll.update_one(
+                    {"studentId": studentId},
+                    {
+                        "$set": {
+                            "currentStudyHours": float(latest_record.get("studyHours", 0)),
+                            "currentFocusLevel": float(latest_record.get("focusLevel", 0)),
+                            "currentMark": latest_record.get("overallMark", 0),
+                            "generatedAt": datetime.utcnow()
+                        }
+                    },
+                    upsert=True
+                )
+            
+            return {"status": "success", "message": "Study information updated successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update study information")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating study info: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 
         # ==========================
 # Additional Student Routes
@@ -1196,3 +1265,113 @@ async def get_or_generate_recommendation(studentId: str):
     saved_doc["_id"] = str(saved_doc["_id"])
 
     return saved_doc
+
+@app.get("/weekly-academic-summary", response_description="Get aggregated academic data for all students")
+async def get_weekly_academic_summary():
+    """Return aggregated academic data for all students for the admin dashboard."""
+    try:
+        students_coll = app.mongodb["Students"]
+        academics_coll = app.mongodb["academics"]
+        rec_coll = app.mongodb["recommendations"]
+        
+        # Fetch all students
+        students_cursor = students_coll.find()
+        students = []
+        async for student in students_cursor:
+            students.append(student)
+        
+        if not students:
+            return {
+                "totalStudents": 0,
+                "academicData": [],
+                "aggregateStats": {
+                    "avgStudyHours": 0.0,
+                    "avgFocusLevel": 0.0,
+                    "highFocusCount": 0,
+                    "highStudyCount": 0,
+                    "totalStudents": 0,
+                    "dailyAverages": [0.0] * 7,
+                }
+            }
+        
+        # Collect academic data for all students
+        academic_data = []
+        total_study_hours = 0.0
+        total_focus_level = 0.0
+        high_focus_count = 0  # Students with focus > 7
+        high_study_count = 0  # Students studying more than 3 hrs/day
+        student_count = 0
+        
+        # Initialize daily averages (7 days in a week)
+        daily_averages = [0.0] * 7
+        
+        for student in students:
+            student_id = student.get("UserID")
+            if not student_id:
+                continue
+                
+            # Fetch latest recommendation data for this student
+            recommendation = await rec_coll.find_one(
+                {"studentId": student_id},
+                sort=[("generatedAt", -1)]
+            )
+            
+            if recommendation:
+                study_hours = recommendation.get("currentStudyHours", 0.0)
+                focus_level = recommendation.get("currentFocusLevel", 0.0)
+                
+                academic_data.append({
+                    "studentId": student_id,
+                    "studentName": student.get("Student Name", "Unknown"),
+                    "studyHours": study_hours,
+                    "focusLevel": focus_level,
+                    "currentMark": recommendation.get("currentMark", 0.0),
+                })
+                
+                total_study_hours += study_hours
+                total_focus_level += focus_level
+                student_count += 1
+                
+                # Count students with high focus
+                if focus_level > 7:
+                    high_focus_count += 1
+                    
+                # Count students with high study hours
+                if study_hours > 3:
+                    high_study_count += 1
+                    
+                # For daily averages, we'll distribute the weekly study hours across 7 days
+                daily_average = study_hours / 7
+                for i in range(7):
+                    daily_averages[i] += daily_average
+        
+        # Calculate averages
+        avg_study_hours = total_study_hours / student_count if student_count > 0 else 0.0
+        avg_focus_level = total_focus_level / student_count if student_count > 0 else 0.0
+        
+        # Calculate daily averages
+        for i in range(7):
+            daily_averages[i] = daily_averages[i] / student_count if student_count > 0 else 0.0
+        
+        # Calculate high percentages
+        high_focus_percentage = (high_focus_count / student_count * 100) if student_count > 0 else 0.0
+        high_study_percentage = (high_study_count / student_count * 100) if student_count > 0 else 0.0
+        
+        return {
+            "totalStudents": student_count,
+            "academicData": academic_data,
+            "aggregateStats": {
+                "avgStudyHours": round(avg_study_hours, 2),
+                "avgFocusLevel": round(avg_focus_level, 2),
+                "highFocusCount": high_focus_count,
+                "highStudyCount": high_study_count,
+                "highFocusPercentage": round(high_focus_percentage, 2),
+                "highStudyPercentage": round(high_study_percentage, 2),
+                "totalStudents": student_count,
+                "dailyAverages": [round(avg, 2) for avg in daily_averages],
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error fetching weekly academic summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

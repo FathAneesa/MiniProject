@@ -27,6 +27,7 @@ class _ViewAcademicPageState extends State<ViewAcademicPage> {
     fetchAcademicData();
   }
 
+
 Future<void> fetchAcademicData() async {
   try {
     final response = await http.get(
@@ -60,81 +61,105 @@ Future<void> fetchAcademicData() async {
   }
 }
 
-
   Future<void> deleteSubject(int index) async {
-  try {
-    final response = await http.delete(
-      Uri.parse("$apiBaseUrl/academics/${widget.studentId}/subjects/$index"),
+    // Show confirmation dialog before deleting
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            "Confirm Delete",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          content: Text(
+            "Are you sure you want to delete this subject? This action cannot be undone.",
+            style: GoogleFonts.poppins(
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                "Cancel",
+                style: GoogleFonts.poppins(
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.errorColor,
+                foregroundColor: AppTheme.textOnPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                "Delete",
+                style: GoogleFonts.poppins(),
+              ),
+            ),
+          ],
+        );
+      },
     );
 
-    if (response.statusCode == 200) {
-      final decoded = json.decode(response.body);
-      if (decoded["status"] == "success") {
-        setState(() {
-          subjects.removeAt(index);
-        });
-      }
-    } else {
-      debugPrint("❌ Failed to delete subject: ${response.body}");
-    }
-  } catch (e) {
-    debugPrint("❌ Error deleting subject: $e");
-  }
-}
+    // If user didn't confirm, return early
+    if (confirm != true) return;
 
+    // Proceed with deletion
+    try {
+      final response = await http.delete(
+        Uri.parse("$apiBaseUrl/academics/${widget.studentId}/subjects/$index"),
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded["status"] == "success") {
+          setState(() {
+            subjects.removeAt(index);
+          });
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: "Subject deleted successfully",
+          );
+        } else {
+          ThemeHelpers.showThemedSnackBar(
+            context,
+            message: "Failed to delete subject: ${decoded["message"] ?? "Unknown error"}",
+            isError: true,
+          );
+        }
+      } else {
+        debugPrint("❌ Failed to delete subject: ${response.body}");
+        ThemeHelpers.showThemedSnackBar(
+          context,
+          message: "Failed to delete subject. Server error.",
+          isError: true,
+        );
+      }
+    } catch (e) {
+      debugPrint("❌ Error deleting subject: $e");
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: "Error deleting subject: $e",
+        isError: true,
+      );
+    }
+  }
 
 Future<void> editSubject(int index) async {
   final subject = subjects[index];
   final nameController = TextEditingController(text: subject["name"]);
   final markController = TextEditingController(text: subject["mark"].toString());
-
-  await ThemeHelpers.showThemedDialog(
-    context: context,
-    title: "Edit Subject",
-    content: "",
-    confirmText: "Save",
-    cancelText: "Cancel",
-    onConfirm: () async {
-      final updatedSubject = {
-        "name": nameController.text,
-        "mark": int.tryParse(markController.text) ?? 0,
-      };
-
-      try {
-        final response = await http.put(
-          Uri.parse("$apiBaseUrl/academics/${widget.studentId}/subjects/$index"),
-          headers: {"Content-Type": "application/json"},
-          body: json.encode(updatedSubject),
-        );
-
-        if (response.statusCode == 200) {
-          final decoded = json.decode(response.body);
-          if (decoded["status"] == "success") {
-            setState(() {
-              subjects[index] = updatedSubject;
-            });
-            Navigator.pop(context);
-            ThemeHelpers.showThemedSnackBar(
-              context,
-              message: "Subject updated successfully",
-            );
-          }
-        } else {
-          ThemeHelpers.showThemedSnackBar(
-            context,
-            message: "Failed to update: ${response.body}",
-            isError: true,
-          );
-        }
-      } catch (e) {
-        ThemeHelpers.showThemedSnackBar(
-          context,
-          message: "Error updating subject: $e",
-          isError: true,
-        );
-      }
-    },
-  );
 
   // Show custom dialog with themed text fields
   await showDialog(
@@ -179,7 +204,7 @@ Future<void> editSubject(int index) async {
           TextField(
             controller: markController,
             decoration: InputDecoration(
-              labelText: "Marks",
+              labelText: "Marks (0-100)",
               labelStyle: GoogleFonts.poppins(
                 color: AppTheme.textSecondary,
               ),
@@ -213,9 +238,22 @@ Future<void> editSubject(int index) async {
         ),
         ElevatedButton(
           onPressed: () async {
+            // Validate marks input
+            final markText = markController.text;
+            final mark = int.tryParse(markText);
+            
+            if (mark == null || mark < 0 || mark > 100) {
+              ThemeHelpers.showThemedSnackBar(
+                context,
+                message: "Marks must be a number between 0 and 100",
+                isError: true,
+              );
+              return;
+            }
+
             final updatedSubject = {
               "name": nameController.text,
-              "mark": int.tryParse(markController.text) ?? 0,
+              "mark": mark,
             };
 
             try {
@@ -231,20 +269,22 @@ Future<void> editSubject(int index) async {
                   setState(() {
                     subjects[index] = updatedSubject;
                   });
-                  Navigator.pop(context);
+                  Navigator.pop(context); // Close the dialog
                   ThemeHelpers.showThemedSnackBar(
                     context,
                     message: "Subject updated successfully",
                   );
                 }
               } else {
+                Navigator.pop(context); // Close the dialog
                 ThemeHelpers.showThemedSnackBar(
                   context,
-                  message: "Failed to update: ${response.body}",
+                  message: "Failed to update subject",
                   isError: true,
                 );
               }
             } catch (e) {
+              Navigator.pop(context); // Close the dialog
               ThemeHelpers.showThemedSnackBar(
                 context,
                 message: "Error updating subject: $e",
@@ -267,6 +307,210 @@ Future<void> editSubject(int index) async {
       ],
     ),
   );
+}
+
+Future<void> editStudyInfo() async {
+  final studyHoursController = TextEditingController(text: studyHours?.toString() ?? "");
+  final focusLevelController = TextEditingController(text: focusLevel?.toString() ?? "");
+
+  // Show custom dialog with themed text fields
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Text(
+        "Edit Study Information",
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryColor,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: studyHoursController,
+            decoration: InputDecoration(
+              labelText: "Study Hours (per day)",
+              labelStyle: GoogleFonts.poppins(
+                color: AppTheme.textSecondary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 2,
+                ),
+              ),
+            ),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: focusLevelController,
+            decoration: InputDecoration(
+              labelText: "Focus Level (out of 10)",
+              labelStyle: GoogleFonts.poppins(
+                color: AppTheme.textSecondary,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: AppTheme.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 2,
+                ),
+              ),
+            ),
+            keyboardType: TextInputType.number,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            "Cancel",
+            style: GoogleFonts.poppins(
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            // Validate inputs
+            final studyHoursText = studyHoursController.text;
+            final focusLevelText = focusLevelController.text;
+            
+            final studyHoursValue = double.tryParse(studyHoursText);
+            final focusLevelValue = double.tryParse(focusLevelText);
+            
+            if (studyHoursValue == null || studyHoursValue < 0) {
+              ThemeHelpers.showThemedSnackBar(
+                context,
+                message: "Study hours must be a positive number",
+                isError: true,
+              );
+              return;
+            }
+            
+            if (focusLevelValue == null || focusLevelValue < 0 || focusLevelValue > 10) {
+              ThemeHelpers.showThemedSnackBar(
+                context,
+                message: "Focus level must be a number between 0 and 10",
+                isError: true,
+              );
+              return;
+            }
+
+            try {
+              // Update study info using the new endpoint
+              final response = await http.put(
+                Uri.parse("$apiBaseUrl/academics/${widget.studentId}/study-info"),
+                headers: {"Content-Type": "application/json"},
+                body: json.encode({
+                  "studentId": widget.studentId,
+                  "studyHours": studyHoursValue.toString(),
+                  "focusLevel": focusLevelValue.toString(),
+                  "subjects": subjects,
+                  "overallMark": _calculateOverallMark(),
+                }),
+              );
+
+              debugPrint("Response status: ${response.statusCode}");
+              debugPrint("Response body: ${response.body}");
+
+              if (response.statusCode == 200) {
+                final decoded = json.decode(response.body);
+                if (decoded["status"] == "success") {
+                  setState(() {
+                    studyHours = studyHoursValue.toInt();
+                    focusLevel = focusLevelValue.toInt();
+                  });
+                  Navigator.pop(context); // Close the dialog
+                  ThemeHelpers.showThemedSnackBar(
+                    context,
+                    message: "✅ Academic data saved! Your recommendations will be updated.",
+                  );
+                  // Refresh the data to ensure consistency
+                  fetchAcademicData();
+                } else {
+                  Navigator.pop(context); // Close the dialog
+                  ThemeHelpers.showThemedSnackBar(
+                    context,
+                    message: "Failed to update study information: ${decoded["message"] ?? "Unknown error"}",
+                    isError: true,
+                  );
+                }
+              } else {
+                Navigator.pop(context); // Close the dialog
+                ThemeHelpers.showThemedSnackBar(
+                  context,
+                  message: "Failed to update study information. Server error: ${response.statusCode}",
+                  isError: true,
+                );
+              }
+            } catch (e) {
+              debugPrint("Error updating study information: $e");
+              Navigator.pop(context); // Close the dialog
+              ThemeHelpers.showThemedSnackBar(
+                context,
+                message: "Error updating study information: $e",
+                isError: true,
+              );
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: AppTheme.textOnPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            "Save",
+            style: GoogleFonts.poppins(),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+int _calculateOverallMark() {
+  if (subjects.isEmpty) return 0;
+  
+  int total = 0;
+  int count = 0;
+  
+  for (var subject in subjects) {
+    var mark = subject["mark"];
+    if (mark is int) {
+      total += mark;
+      count++;
+    } else if (mark is String) {
+      int? markValue = int.tryParse(mark);
+      if (markValue != null) {
+        total += markValue;
+        count++;
+      }
+    }
+  }
+  
+  return count > 0 ? (total ~/ count) : 0;
 }
 
   @override
@@ -489,13 +733,26 @@ Future<void> editSubject(int index) async {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            "Study Information",
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.primaryColor,
-                                            ),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                "Study Information",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppTheme.primaryColor,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.edit,
+                                                  color: AppTheme.primaryColor,
+                                                  size: 20,
+                                                ),
+                                                onPressed: editStudyInfo,
+                                              ),
+                                            ],
                                           ),
                                           const SizedBox(height: 12),
                                           Row(
