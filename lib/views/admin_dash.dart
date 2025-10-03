@@ -69,7 +69,7 @@ class AdminDash extends StatelessWidget {
                       children: [
                         ThemeHelpers.dashboardButton(
                           text: "Add Student",
-                          backgroundColor: const Color.fromARGB(255, 199, 76, 173),
+                          backgroundColor: AppTheme.primaryColor,
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -83,7 +83,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "View Student Details",
-                          backgroundColor: const Color.fromARGB(255, 215, 107, 186),
+                          backgroundColor: AppTheme.secondaryColor,
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -97,7 +97,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "Edit Student Details",
-                          backgroundColor: const Color.fromARGB(255, 230, 140, 200),
+                          backgroundColor: AppTheme.secondaryVariant,
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -121,7 +121,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "Weekly Academic Summary",
-                          backgroundColor: const Color.fromARGB(255, 207, 89, 181),
+                          backgroundColor: AppTheme.accentOrange,
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -135,7 +135,7 @@ class AdminDash extends StatelessWidget {
 
                         ThemeHelpers.dashboardButton(
                           text: "Logout",
-                          backgroundColor: const Color.fromARGB(255, 169, 45, 142),
+                          backgroundColor: AppTheme.accentViolet,
                           onPressed: () {
                             _logout(context);
                           },

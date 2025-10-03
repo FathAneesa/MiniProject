@@ -2,33 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Define your color palette
-  static const Color primaryColor = Color.fromARGB(255, 227, 41, 178);
-  static const Color primaryVariant = Color.fromARGB(255, 213, 108, 240);
-  static const Color secondaryColor = Color.fromARGB(255, 228, 167, 187);
-  static const Color secondaryVariant = Color.fromARGB(255, 240, 128, 166);
+  // Define your color palette - Beige and Brown theme
+  static const Color primaryColor = Color(0xFF8B5A2B); // Medium Brown
+  static const Color primaryVariant = Color(0xFFA0522D); // Sienna Brown
+  static const Color secondaryColor = Color(0xFFD2B48C); // Tan/Beige
+  static const Color secondaryVariant = Color(0xFFDEB887); // Burlywood
   
   // Accent colors for buttons and interactive elements
-  static const Color accentBlue = Color.fromARGB(255, 58, 150, 242);
-  static const Color accentOrange = Color.fromARGB(255, 225, 142, 59);
-  static const Color accentTeal = Color.fromARGB(255, 36, 225, 203);
-  static const Color accentPurple = Color.fromARGB(255, 203, 30, 212);
-  static const Color accentViolet = Color.fromARGB(255, 179, 71, 225);
+  static const Color accentBlue = Color(0xFF5D8AA8); // Blue Beige
+  static const Color accentOrange = Color(0xFFCD853F); // Peru Brown
+  static const Color accentTeal = Color(0xFF8F9779); // Moss Green
+  static const Color accentPurple = Color(0xFF915C83); // Antique Fuchsia
+  static const Color accentViolet = Color(0xFF8A3324); // Burnt Umber
   
   // Background colors
-  static const Color cardBackground = Color.fromARGB(255, 235, 171, 222);
+  static const Color cardBackground = Color(0xFFF5F5DC); // Beige
   static const Color surfaceColor = Colors.white;
-  static const Color backgroundColor = Color.fromARGB(255, 250, 248, 255);
+  static const Color backgroundColor = Color(0xFFFFF8DC); // Cornsilk
   
   // Text colors
-  static const Color textPrimary = Color(0xFF2D2D2D);
-  static const Color textSecondary = Color(0xFF6B6B6B);
+  static const Color textPrimary = Color(0xFF3E2723); // Dark Brown
+  static const Color textSecondary = Color(0xFF5D4037); // Brown
   static const Color textOnPrimary = Colors.white;
   
   // Status colors
-  static const Color successColor = Colors.green;
-  static const Color errorColor = Colors.red;
-  static const Color warningColor = Colors.orange;
+  static const Color successColor = Color(0xFF388E3C); // Green
+  static const Color errorColor = Color(0xFFD32F2F); // Red
+  static const Color warningColor = Color(0xFFFFA000); // Amber
   
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
@@ -380,7 +380,7 @@ class AppDecorations {
   );
   
   static BoxDecoration cardDecoration = BoxDecoration(
-    color: AppTheme.cardBackground.withAlpha(217),
+    color: AppTheme.cardBackground,
     borderRadius: BorderRadius.circular(16),
     boxShadow: [
       BoxShadow(

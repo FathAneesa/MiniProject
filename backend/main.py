@@ -23,30 +23,17 @@ from fastapi.responses import JSONResponse
 # ========================
 # Load environment variables
 # ========================
-print("DEBUG: Current working directory:", os.getcwd())
-print("DEBUG: Files in current directory:", os.listdir('.'))
-if os.path.exists('.env'):
-    print("DEBUG: .env file exists")
-    with open('.env', 'r') as f:
-        print("DEBUG: .env file contents:")
-        for line in f:
-            if 'EMAIL' in line and not line.startswith('#'):
-                print(f"DEBUG: {line.strip()}")
-else:
-    print("DEBUG: .env file does not exist")
+import os
 
-print("DEBUG: Attempting to load .env file")
-# Try to load .env file from backend directory
+# Try to load .env file from backend directory first
 load_dotenv('./backend/.env')
 
 # If that doesn't work, try to load from current directory
 if not os.getenv("EMAIL_USER") and not os.getenv("EMAIL_PASS"):
-    print("DEBUG: Trying to load .env from current directory")
     load_dotenv()
 
 # If that doesn't work, try to load from parent directory
 if not os.getenv("EMAIL_USER") and not os.getenv("EMAIL_PASS"):
-    print("DEBUG: Trying to load .env from parent directory")
     load_dotenv('../.env')
 
 MONGO_URI = os.getenv("MONGO_URI")
@@ -58,22 +45,26 @@ SMTP_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_ADDRESS = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASS")
 
-print(f"DEBUG: After loading, EMAIL_USER={os.getenv('EMAIL_USER')}")
-print(f"DEBUG: After loading, EMAIL_PASS={'*' * len(os.getenv('EMAIL_PASS')) if os.getenv('EMAIL_PASS') else 'None'}")
+# Print environment variables for debugging (remove in production)
+# print(f"DEBUG: After loading, EMAIL_USER={os.getenv('EMAIL_USER')}")
+# print(f"DEBUG: After loading, EMAIL_PASS={'*' * len(os.getenv('EMAIL_PASS')) if os.getenv('EMAIL_PASS') else 'None'}")
 
 # Debug: Print all environment variables to check if they're loaded
-import os
-print("DEBUG: All environment variables:")
-for key, value in os.environ.items():
-    if "EMAIL" in key or "email" in key:
-        print(f"DEBUG: {key}={value}")
+# print("DEBUG: All environment variables with EMAIL:")
+# for key, value in os.environ.items():
+#     if "EMAIL" in key.upper() or "EMAIL" in key.lower():
+#         # Don't print the actual password value
+#         if "PASS" in key.upper():
+#             print(f"DEBUG: {key}={'*' * len(value) if value else 'None'}")
+#         else:
+#             print(f"DEBUG: {key}={value}")
 
-print(f"DEBUG: Loaded environment variables:")
-print(f"DEBUG: MONGO_URI={MONGO_URI}")
-print(f"DEBUG: EMAIL_ADDRESS={EMAIL_ADDRESS}")
-print(f"DEBUG: EMAIL_PASSWORD={'*' * len(EMAIL_PASSWORD) if EMAIL_PASSWORD else 'None'}")
-print(f"DEBUG: SMTP_SERVER={SMTP_SERVER}")
-print(f"DEBUG: SMTP_PORT={SMTP_PORT}")
+# print(f"DEBUG: Loaded environment variables:")
+# print(f"DEBUG: MONGO_URI={MONGO_URI}")
+# print(f"DEBUG: EMAIL_ADDRESS={EMAIL_ADDRESS}")
+# print(f"DEBUG: EMAIL_PASSWORD={'*' * len(EMAIL_PASSWORD) if EMAIL_PASSWORD else 'None'}")
+# print(f"DEBUG: SMTP_SERVER={SMTP_SERVER}")
+# print(f"DEBUG: SMTP_PORT={SMTP_PORT}")
 
 if not MONGO_URI:
     raise RuntimeError("❌ MONGO_URI is not set in .env file")
@@ -182,11 +173,6 @@ class PasswordResetRequest(BaseModel):
 
 async def send_email_otp(to_email: str, otp: str) -> bool:
     """Send OTP via email using SMTP"""
-    print(f"DEBUG: EMAIL_ADDRESS={EMAIL_ADDRESS}")
-    print(f"DEBUG: EMAIL_PASSWORD={EMAIL_PASSWORD}")
-    print(f"DEBUG: SMTP_SERVER={SMTP_SERVER}")
-    print(f"DEBUG: SMTP_PORT={SMTP_PORT}")
-    
     if not EMAIL_ADDRESS:
         print("❌ EMAIL_ADDRESS is None or empty")
         return False
@@ -218,24 +204,16 @@ async def send_email_otp(to_email: str, otp: str) -> bool:
         msg['From'] = EMAIL_ADDRESS
         msg['To'] = to_email
         
-        print(f"DEBUG: Attempting to send email from {EMAIL_ADDRESS} to {to_email}")
-        print(f"DEBUG: SMTP Server: {SMTP_SERVER}:{SMTP_PORT}")
-        
         # Send email
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
-            print(f"DEBUG: Attempting to login with EMAIL_ADDRESS")
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            print(f"DEBUG: Login successful, sending message")
             server.send_message(msg)
         
         print(f"✅ OTP email sent successfully to {to_email}")
         return True
     except Exception as e:
         print(f"❌ Failed to send email: {str(e)}")
-        print(f"❌ Exception type: {type(e).__name__}")
-        import traceback
-        traceback.print_exc()
         return False
 
 def generate_otp() -> str:
@@ -268,9 +246,6 @@ async def check_email_exists(request: EmailCheckRequest):
 @app.post("/auth/send-otp", response_description="Send OTP to email")
 async def send_otp_to_email(request: OTPRequest):
     """Generate and send OTP to user's email"""
-    print(f"DEBUG: send_otp_to_email called with email: {request.email}")
-    print(f"DEBUG: Global EMAIL_ADDRESS: {EMAIL_ADDRESS}")
-    print(f"DEBUG: Global EMAIL_PASSWORD: {'*' * len(EMAIL_PASSWORD) if EMAIL_PASSWORD else 'None'}")
     students_collection = app.mongodb["Students"]
     otp_collection = app.mongodb["otp_tokens"]
     
@@ -307,12 +282,9 @@ async def send_otp_to_email(request: OTPRequest):
         },
         upsert=True
     )
-    print(f"DEBUG: OTP stored in database")
     
     # Send email
-    print(f"DEBUG: Calling send_email_otp function")
     email_sent = await send_email_otp(request.email, otp)
-    print(f"DEBUG: send_email_otp returned: {email_sent}")
     
     if not email_sent:
         # If real email fails, provide debug info but still return success for development

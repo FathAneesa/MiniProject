@@ -561,7 +561,7 @@ Future<void> _saveStudent() async {
                     initialDate: DateTime(today.year - 20, today.month, today.day), // Default to 20 years ago
                     firstDate: minimumDate, // Minimum: 60 years ago
                     lastDate: maximumDate,  // Maximum: at least 16 years ago
-                    helpText: 'Select Date of Birth (Age: 16-60 years)',
+                    helpText: 'Select Date of Birth (DD-MM-YYYY)',
                     errorFormatText: 'Enter a valid date',
                     errorInvalidText: 'Student must be 16-60 years old',
                     confirmText: 'SELECT',
