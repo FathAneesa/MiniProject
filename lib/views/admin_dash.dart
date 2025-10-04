@@ -59,63 +59,6 @@ class AdminDash extends StatelessWidget {
               // Grid of circular cards
               Expanded(
                 child: Padding(
-<<<<<<< HEAD
-                  padding: const EdgeInsets.all(16.0),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1, // square cells
-                    children: [
-                      GridCard(
-                        icon: Icons.person_add,
-                        text: "Add Student",
-                        color: const Color.fromARGB(255, 223, 217, 222),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const AddStud()),
-                          );
-                        },
-                      ),
-                      GridCard(
-                        icon: Icons.list_alt,
-                        text: "View Student Details",
-                        color: const Color.fromARGB(255, 225, 219, 219),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const ViewStud()),
-                          );
-                        },
-                      ),
-                      GridCard(
-                        icon: Icons.edit,
-                        text: "Edit Student Details",
-                        color: const Color.fromARGB(255, 232, 228, 231),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const EditPage()),
-                          );
-                        },
-                      ),
-                      GridCard(
-                        icon: Icons.analytics,
-                        text: "View Weekly Analysis",
-                        color: const Color.fromARGB(255, 242, 233, 240),
-                        onTap: () {
-                          // TODO: Navigate to Weekly Progress page
-                        },
-                      ),
-                      GridCard(
-                        icon: Icons.logout,
-                        text: "Logout",
-                        color: const Color.fromARGB(255, 223, 215, 221),
-                        onTap: () => _logout(context),
-                      ),
-                    ],
-=======
                   padding: const EdgeInsets.all(20),
                   child: SingleChildScrollView(
                     child: Column(
@@ -177,6 +120,7 @@ class AdminDash extends StatelessWidget {
                           text: "View Weekly Analysis",
                           backgroundColor: const Color.fromARGB(255, 207, 89, 181),
                           onPressed: () {
+                            
                             // TODO: Navigate to Weekly Progress page
                           },
                         ),
@@ -191,7 +135,6 @@ class AdminDash extends StatelessWidget {
                         ),
                       ],
                     ),
->>>>>>> dcaafeaf03bd3d510c77338faab07230428e1989
                   ),
                 ),
               ),

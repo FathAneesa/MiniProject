@@ -1,5 +1,3 @@
-# /backend/main.py
-
 import os
 from typing import List, Optional, Any
 from dotenv import load_dotenv
@@ -650,16 +648,6 @@ async def update_student_by_admission_no(admission_no: str, updated_data: dict):
     return {"status": "success", "message": "Student updated successfully"}
 
 
-# Delete student
-@app.delete("/student/{admission_no}")
-async def delete_student_by_admission_no(admission_no: str):
-    Students_collection = app.mongodb["Students"]
-
-    result = await Students_collection.delete_one({"Admission No": admission_no.strip()})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Student not found")
-
-    return {"status": "success", "message": "Student deleted successfully"}
 
 
 

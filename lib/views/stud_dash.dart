@@ -3,12 +3,8 @@ import 'add_academic.dart';
 import 'view_academic.dart';
 import 'login_page.dart';
 import 'memory_test.dart';
-<<<<<<< HEAD
-import 'rec.dart';
-=======
 import 'rec.dart'; // Import the recommendations page
 import 'weekrec.dart'; // Import the weekly progress page
->>>>>>> dcaafeaf03bd3d510c77338faab07230428e1989
 import '../theme/app_theme.dart';
 import '../theme/theme_helpers.dart';
 
@@ -63,214 +59,115 @@ class StudDash extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
-              // Circular Grid of Student Features
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: GridView(
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 180,
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 20,
-                      childAspectRatio: 1,
-                    ),
-                    children: [
-                      _buildCircleCard(
-                        icon: Icons.add_chart,
-                        text: "Add Academic Data",
-                        color: const Color.fromARGB(255, 220, 220, 235),
-                        onTap: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddAcademicPage(studentId: studentId),
-                            ),
-                          );
-                          if (result == true && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  '✅ Academic data saved! Your recommendations will be updated.',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                backgroundColor: Colors.green,
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      _buildCircleCard(
-                        icon: Icons.visibility,
-                        text: "View Academic Data",
-                        color: const Color.fromARGB(255, 210, 235, 230),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ViewAcademicPage(studentId: studentId),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCircleCard(
-                        icon: Icons.psychology,
-                        text: "Memory/Focus Test",
-                        color: const Color.fromARGB(255, 240, 225, 220),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MemoryTestPage(studentId: studentId),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCircleCard(
-                        icon: Icons.recommend,
-                        text: "Daily Recommendation",
-                        color: const Color.fromARGB(255, 230, 220, 240),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => RecommendationPage(studentId: studentId),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCircleCard(
-                        icon: Icons.analytics_outlined,
-                        text: "Weekly Progress",
-                        color: const Color.fromARGB(255, 225, 235, 225),
-                        onTap: () {
-                          // TODO: Implement Weekly Progress page
-                        },
-                      ),
-                      _buildCircleCard(
-                        icon: Icons.logout,
-                        text: "Logout",
-                        color: const Color.fromARGB(255, 200, 200, 200),
-                        onTap: () => _logout(context),
-                      ),
-                    ],
-                  ),
-                ),
-<<<<<<< HEAD
-              ),
-            ],
-=======
-                const SizedBox(height: 30),
+  
 
-                ThemeHelpers.dashboardButton(
-                  text: "Add Academic Data",
-                  backgroundColor: const Color.fromARGB(255, 215, 107, 186), // Soft rose pink for adding data
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AddAcademicPage(studentId: studentId),
+              ThemeHelpers.dashboardButton(
+                text: "Add Academic Data",
+                backgroundColor: const Color.fromARGB(255, 215, 107, 186), // Soft rose pink for adding data
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddAcademicPage(studentId: studentId),
+                    ),
+                  );
+                  
+                  // If academic data was updated, show notification
+                  if (result == true && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '✅ Academic data saved! Your recommendations will be updated.',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: AppTheme.successColor,
+                        duration: Duration(seconds: 3),
                       ),
                     );
-                    
-                    // If academic data was updated, show notification
-                    if (result == true && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '✅ Academic data saved! Your recommendations will be updated.',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: AppTheme.successColor,
-                          duration: Duration(seconds: 3),
+                  }
+                },
+              ),
+              const SizedBox(height: 15),
+
+              ThemeHelpers.dashboardButton(
+                text: "View Academic Data",
+                backgroundColor: const Color.fromARGB(255, 230, 140, 200), // Light pink for viewing
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ViewAcademicPage(studentId: studentId),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 15),
+
+              ThemeHelpers.dashboardButton(
+                text: "Take Memory/Focus Test",
+                backgroundColor: const Color.fromARGB(255, 199, 76, 173), // Rich pink for testing
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MemoryTestPage(studentId: studentId)),
+                  );
+                },
+              ),
+              const SizedBox(height: 15),
+
+              ThemeHelpers.dashboardButton(
+                text: "View Daily Recommendation",
+                backgroundColor: const Color.fromARGB(255, 207, 89, 181), // Medium pink for recommendations
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RecommendationPage(
+                        studentId: studentId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 15),
+
+              ThemeHelpers.dashboardButton(
+                text: "View Weekly Progress",
+                backgroundColor: const Color.fromARGB(255, 184, 58, 158), // Deep pink for progress
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => WeeklyProgressPage(studentId: studentId),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 15),
+
+              ThemeHelpers.dashboardButton(
+                text: "Logout",
+                backgroundColor: const Color.fromARGB(255, 169, 45, 142), // Dark pink for logout
+                onPressed: () {
+                  ThemeHelpers.showThemedDialog(
+                    context: context,
+                    title: "Logout",
+                    content: "Are you sure you want to logout?",
+                    cancelText: "Cancel",
+                    confirmText: "Logout",
+                    onConfirm: () {
+                      Navigator.of(context).pop();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
                         ),
                       );
-                    }
-                  },
-                ),
-                const SizedBox(height: 15),
-
-                ThemeHelpers.dashboardButton(
-                  text: "View Academic Data",
-                  backgroundColor: const Color.fromARGB(255, 230, 140, 200), // Light pink for viewing
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ViewAcademicPage(studentId: studentId),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 15),
-
-                ThemeHelpers.dashboardButton(
-                  text: "Take Memory/Focus Test",
-                  backgroundColor: const Color.fromARGB(255, 199, 76, 173), // Rich pink for testing
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MemoryTestPage(studentId: studentId)),
-                    );
-                  },
-                ),
-                const SizedBox(height: 15),
-
-                ThemeHelpers.dashboardButton(
-                  text: "View Daily Recommendation",
-                  backgroundColor: const Color.fromARGB(255, 207, 89, 181), // Medium pink for recommendations
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RecommendationPage(
-                          studentId: studentId,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 15),
-
-                ThemeHelpers.dashboardButton(
-                  text: "View Weekly Progress",
-                  backgroundColor: const Color.fromARGB(255, 184, 58, 158), // Deep pink for progress
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => WeeklyProgressPage(studentId: studentId),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 15),
-
-                ThemeHelpers.dashboardButton(
-                  text: "Logout",
-                  backgroundColor: const Color.fromARGB(255, 169, 45, 142), // Dark pink for logout
-                  onPressed: () {
-                    ThemeHelpers.showThemedDialog(
-                      context: context,
-                      title: "Logout",
-                      content: "Are you sure you want to logout?",
-                      cancelText: "Cancel",
-                      confirmText: "Logout",
-                      onConfirm: () {
-                        Navigator.of(context).pop();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginPage(),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
-            ),
->>>>>>> dcaafeaf03bd3d510c77338faab07230428e1989
+                    },
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
