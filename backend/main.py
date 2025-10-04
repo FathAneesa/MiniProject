@@ -11,7 +11,7 @@ from bson import ObjectId
 import random
 import smtplib
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId, json_util
 import json
@@ -21,7 +21,18 @@ from fastapi.responses import JSONResponse
 # ========================
 # Load environment variables
 # ========================
-load_dotenv()
+import os
+
+# Try to load .env file from backend directory first
+load_dotenv('./backend/.env')
+
+# If that doesn't work, try to load from current directory
+if not os.getenv("EMAIL_USER") and not os.getenv("EMAIL_PASS"):
+    load_dotenv()
+
+# If that doesn't work, try to load from parent directory
+if not os.getenv("EMAIL_USER") and not os.getenv("EMAIL_PASS"):
+    load_dotenv('../.env')
 
 MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = os.getenv("DB_NAME", "wellnessDB")
@@ -31,6 +42,27 @@ SMTP_SERVER = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_ADDRESS = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASS")
+
+# Print environment variables for debugging (remove in production)
+# print(f"DEBUG: After loading, EMAIL_USER={os.getenv('EMAIL_USER')}")
+# print(f"DEBUG: After loading, EMAIL_PASS={'*' * len(os.getenv('EMAIL_PASS')) if os.getenv('EMAIL_PASS') else 'None'}")
+
+# Debug: Print all environment variables to check if they're loaded
+# print("DEBUG: All environment variables with EMAIL:")
+# for key, value in os.environ.items():
+#     if "EMAIL" in key.upper() or "EMAIL" in key.lower():
+#         # Don't print the actual password value
+#         if "PASS" in key.upper():
+#             print(f"DEBUG: {key}={'*' * len(value) if value else 'None'}")
+#         else:
+#             print(f"DEBUG: {key}={value}")
+
+# print(f"DEBUG: Loaded environment variables:")
+# print(f"DEBUG: MONGO_URI={MONGO_URI}")
+# print(f"DEBUG: EMAIL_ADDRESS={EMAIL_ADDRESS}")
+# print(f"DEBUG: EMAIL_PASSWORD={'*' * len(EMAIL_PASSWORD) if EMAIL_PASSWORD else 'None'}")
+# print(f"DEBUG: SMTP_SERVER={SMTP_SERVER}")
+# print(f"DEBUG: SMTP_PORT={SMTP_PORT}")
 
 if not MONGO_URI:
     raise RuntimeError("❌ MONGO_URI is not set in .env file")
@@ -139,9 +171,15 @@ class PasswordResetRequest(BaseModel):
 
 async def send_email_otp(to_email: str, otp: str) -> bool:
     """Send OTP via email using SMTP"""
-    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
-        print("❌ Email credentials not configured")
+    if not EMAIL_ADDRESS:
+        print("❌ EMAIL_ADDRESS is None or empty")
         return False
+    
+    if not EMAIL_PASSWORD:
+        print("❌ EMAIL_PASSWORD is None or empty")
+        return False
+    
+    print(f"✅ Email credentials found. EMAIL_ADDRESS={EMAIL_ADDRESS}")
     
     try:
         # Create message
@@ -215,11 +253,15 @@ async def send_otp_to_email(request: OTPRequest):
     })
     
     if not student:
+        print(f"DEBUG: Student with email {request.email} not found")
         raise HTTPException(status_code=404, detail="Email not found")
+    
+    print(f"DEBUG: Student with email {request.email} found")
     
     # Generate OTP and token
     otp = generate_otp()
     token = generate_token()
+    print(f"DEBUG: Generated OTP: {otp}, Token: {token}")
     
     # Store OTP in database with expiration
     expiry_time = datetime.utcnow() + timedelta(minutes=10)
@@ -397,7 +439,7 @@ async def login_user(user: User):
         else:
             response_data["user_data"] = None
 
-    # ✅ Save login activity for monitoring
+    # ✅ Save login activity for monitoring with timezone-aware datetime
     logins_collection = app.mongodb["logins"]
     await logins_collection.insert_one({
         "username": user.username,
@@ -604,6 +646,75 @@ async def delete_subject(studentId: str, index: int):
     return {"status": "success", "message": "Subject deleted successfully"}
 
 
+# === Update study hours and focus level in latest academic record ===
+@app.put("/academics/{studentId}/study-info", response_description="Update study hours and focus level")
+async def update_study_info(studentId: str, data: dict):
+    try:
+        academics_collection = app.mongodb["academics"]
+        students_collection = app.mongodb["Students"]
+        rec_coll = app.mongodb["recommendations"]
+
+        # Verify student exists
+        student = await students_collection.find_one({"UserID": studentId})
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+
+        # Find latest academic record
+        record = await academics_collection.find_one(
+            {"studentId": studentId},
+            sort=[("createdAt", -1)]
+        )
+
+        if not record:
+            raise HTTPException(status_code=404, detail="No academic data found")
+
+        # Update study hours and focus level
+        update_data = {
+            "studentId": studentId,
+            "studyHours": data.get("studyHours", record.get("studyHours")),
+            "focusLevel": data.get("focusLevel", record.get("focusLevel")),
+            "subjects": data.get("subjects", record.get("subjects")),
+            "overallMark": data.get("overallMark", record.get("overallMark"))
+        }
+
+        # Add timestamp
+        update_data["createdAt"] = datetime.utcnow()
+
+        # Insert new record with updated information
+        result = await academics_collection.insert_one(update_data)
+        
+        if result.inserted_id:
+            # Also update the recommendations collection with the new data
+            # Fetch the latest academic record we just inserted
+            latest_record = await academics_collection.find_one(
+                {"_id": result.inserted_id}
+            )
+            
+            if latest_record:
+                # Update recommendations with the new study hours and focus level
+                await rec_coll.update_one(
+                    {"studentId": studentId},
+                    {
+                        "$set": {
+                            "currentStudyHours": float(latest_record.get("studyHours", 0)),
+                            "currentFocusLevel": float(latest_record.get("focusLevel", 0)),
+                            "currentMark": latest_record.get("overallMark", 0),
+                            "generatedAt": datetime.utcnow()
+                        }
+                    },
+                    upsert=True
+                )
+            
+            return {"status": "success", "message": "Study information updated successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to update study information")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating study info: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 
         # ==========================
 # Additional Student Routes
@@ -655,18 +766,98 @@ async def update_student_by_admission_no(admission_no: str, updated_data: dict):
 async def monitor():
     """Return the last 10 login activities."""
     logins_collection = app.mongodb["logins"]
+    students_collection = app.mongodb["Students"]
 
-    cursor = logins_collection.find().sort("time", -1).limit(10)
+    # Fix timezone issue by adjusting for the 3-hour offset
+    # This is a temporary fix until we update all datetime.utcnow() calls
+    cursor = logins_collection.find().sort("time", -1).limit(15)
     last_logins = []
+    count = 0
+    
     async for login in cursor:
-        last_logins.append({
-            "username": login["username"],
-            "role": login["role"],
-            "time": login["time"].strftime("%Y-%m-%d %H:%M:%S")
-        })
+        # Adjust for timezone offset (subtract 3 hours)
+        adjusted_time = login["time"] - timedelta(hours=3)
+        
+        username = login["username"]
+        role = login["role"]
+        student_name = "Unknown"
+        
+        # Only look up student name for student roles
+        if role == "student":
+            student = await students_collection.find_one({"UserID": username})
+            if student and "Student Name" in student:
+                student_name = student["Student Name"]
+        elif role == "admin":
+            student_name = "Admin User"
+        else:
+            student_name = f"{role.title()} User"
+        
+        login_entry = {
+            "username": username,
+            "role": role,
+            "time": adjusted_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "studentName": student_name
+        }
+        
+        last_logins.append(login_entry)
+        count += 1
+        
+        # Only take the first 10 after adjustment
+        if count >= 10:
+            break
 
     return {"last_logins": last_logins}
 
+
+@app.get("/weekly-app-usage", response_description="Get login statistics for the past week")
+async def get_weekly_app_usage():
+    """Return login statistics for all students for the past week."""
+    logins_coll = app.mongodb["logins"]
+    
+    # Calculate date range for the past 7 days
+    end_date = datetime.utcnow().date()
+    start_date = end_date - timedelta(days=7)
+    
+    # Initialize data structure for each day of the week
+    daily_stats = {}
+    for i in range(7):
+        date = start_date + timedelta(days=i)
+        daily_stats[date.isoformat()] = {
+            "date": date.isoformat(),
+            "entryCount": 0
+        }
+    
+    # Fetch login data for the past week
+    cursor = logins_coll.find({
+        "time": {
+            "$gte": datetime(start_date.year, start_date.month, start_date.day),
+            "$lte": datetime(end_date.year, end_date.month, end_date.day)
+        }
+    })
+    
+    # Count entries per day
+    async for record in cursor:
+        login_date = record["time"].date().isoformat()
+        if login_date in daily_stats:
+            daily_stats[login_date]["entryCount"] += 1
+    
+    # Convert to list format
+    daily_entries = list(daily_stats.values())
+    
+    # Calculate statistics
+    entry_counts = [day["entryCount"] for day in daily_entries]
+    total_entries = sum(entry_counts)
+    average_entries = total_entries / len(entry_counts) if entry_counts else 0
+    highest_entries = max(entry_counts) if entry_counts else 0
+    
+    return {
+        "daily_entries": daily_entries,
+        "statistics": {
+            "total_entries": total_entries,
+            "average_entries": round(average_entries, 2),
+            "highest_entries": highest_entries
+        }
+    }
 
 
 # ==========================
@@ -884,7 +1075,7 @@ async def monitor():
 
 # 
 from fastapi import HTTPException
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 @app.get("/recommendations/{studentId}", response_description="Get or generate recommendations for a student")
 async def get_or_generate_recommendation(studentId: str):
@@ -909,8 +1100,21 @@ async def get_or_generate_recommendation(studentId: str):
 
     # Use only the latest academic data
     current_mark = latest_academic.get("overallMark", 0)
-    current_study_hours = float(latest_academic.get("studyHours", 0))
-    current_focus = float(latest_academic.get("focusLevel", 0))
+    
+    # Handle potential empty string values for study hours and focus level
+    study_hours_str = latest_academic.get("studyHours", "0")
+    focus_level_str = latest_academic.get("focusLevel", "0")
+    
+    # Convert to float with proper error handling
+    try:
+        current_study_hours = float(study_hours_str) if study_hours_str else 0.0
+    except (ValueError, TypeError):
+        current_study_hours = 0.0
+        
+    try:
+        current_focus = float(focus_level_str) if focus_level_str else 0.0
+    except (ValueError, TypeError):
+        current_focus = 0.0
 
     # 3️⃣ Fetch last 14 days of phone usage
     today = datetime.utcnow().date()
@@ -1091,3 +1295,113 @@ async def get_or_generate_recommendation(studentId: str):
     saved_doc["_id"] = str(saved_doc["_id"])
 
     return saved_doc
+
+@app.get("/weekly-academic-summary", response_description="Get aggregated academic data for all students")
+async def get_weekly_academic_summary():
+    """Return aggregated academic data for all students for the admin dashboard."""
+    try:
+        students_coll = app.mongodb["Students"]
+        academics_coll = app.mongodb["academics"]
+        rec_coll = app.mongodb["recommendations"]
+        
+        # Fetch all students
+        students_cursor = students_coll.find()
+        students = []
+        async for student in students_cursor:
+            students.append(student)
+        
+        if not students:
+            return {
+                "totalStudents": 0,
+                "academicData": [],
+                "aggregateStats": {
+                    "avgStudyHours": 0.0,
+                    "avgFocusLevel": 0.0,
+                    "highFocusCount": 0,
+                    "highStudyCount": 0,
+                    "totalStudents": 0,
+                    "dailyAverages": [0.0] * 7,
+                }
+            }
+        
+        # Collect academic data for all students
+        academic_data = []
+        total_study_hours = 0.0
+        total_focus_level = 0.0
+        high_focus_count = 0  # Students with focus > 7
+        high_study_count = 0  # Students studying more than 3 hrs/day
+        student_count = 0
+        
+        # Initialize daily averages (7 days in a week)
+        daily_averages = [0.0] * 7
+        
+        for student in students:
+            student_id = student.get("UserID")
+            if not student_id:
+                continue
+                
+            # Fetch latest recommendation data for this student
+            recommendation = await rec_coll.find_one(
+                {"studentId": student_id},
+                sort=[("generatedAt", -1)]
+            )
+            
+            if recommendation:
+                study_hours = recommendation.get("currentStudyHours", 0.0)
+                focus_level = recommendation.get("currentFocusLevel", 0.0)
+                
+                academic_data.append({
+                    "studentId": student_id,
+                    "studentName": student.get("Student Name", "Unknown"),
+                    "studyHours": study_hours,
+                    "focusLevel": focus_level,
+                    "currentMark": recommendation.get("currentMark", 0.0),
+                })
+                
+                total_study_hours += study_hours
+                total_focus_level += focus_level
+                student_count += 1
+                
+                # Count students with high focus
+                if focus_level > 7:
+                    high_focus_count += 1
+                    
+                # Count students with high study hours
+                if study_hours > 3:
+                    high_study_count += 1
+                    
+                # For daily averages, we'll distribute the weekly study hours across 7 days
+                daily_average = study_hours / 7
+                for i in range(7):
+                    daily_averages[i] += daily_average
+        
+        # Calculate averages
+        avg_study_hours = total_study_hours / student_count if student_count > 0 else 0.0
+        avg_focus_level = total_focus_level / student_count if student_count > 0 else 0.0
+        
+        # Calculate daily averages
+        for i in range(7):
+            daily_averages[i] = daily_averages[i] / student_count if student_count > 0 else 0.0
+        
+        # Calculate high percentages
+        high_focus_percentage = (high_focus_count / student_count * 100) if student_count > 0 else 0.0
+        high_study_percentage = (high_study_count / student_count * 100) if student_count > 0 else 0.0
+        
+        return {
+            "totalStudents": student_count,
+            "academicData": academic_data,
+            "aggregateStats": {
+                "avgStudyHours": round(avg_study_hours, 2),
+                "avgFocusLevel": round(avg_focus_level, 2),
+                "highFocusCount": high_focus_count,
+                "highStudyCount": high_study_count,
+                "highFocusPercentage": round(high_focus_percentage, 2),
+                "highStudyPercentage": round(high_study_percentage, 2),
+                "totalStudents": student_count,
+                "dailyAverages": [round(avg, 2) for avg in daily_averages],
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error fetching weekly academic summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

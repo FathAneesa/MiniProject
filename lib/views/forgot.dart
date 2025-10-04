@@ -209,54 +209,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       setState(() {
         _isLoading = false; // CRITICAL: Reset loading state on exception
       });
-      // Show mock OTP dialog as fallback
-      _showMockOTPDialog();
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: 'Failed to send OTP. Please check your internet connection.',
+        isError: true,
+      );
     }
   }
   
-  // Helper method to show mock OTP dialog - USER-FRIENDLY VERSION
-  void _showMockOTPDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Connection Failed'),
-          content: const Text(
-            'Unable to send real OTP. Would you like to use a test OTP for development?\n\nTest OTP: 123456'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // CRITICAL: Reset loading state when canceled
-                setState(() {
-                  _isLoading = false;
-                });
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Enable mock OTP and CRITICAL: Reset loading state
-                setState(() {
-                  _isOtpSent = true;
-                  _verificationToken = 'mock-token-123';
-                  _isLoading = false; // CRITICAL: Reset loading state
-                });
-                ThemeHelpers.showThemedSnackBar(
-                  context,
-                  message: 'Test mode enabled! Use OTP: 123456',
-                );
-              },
-              child: const Text('Use Test OTP'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   // Step 3: Verify OTP - USER-FRIENDLY VERSION
   Future<void> _verifyOtp() async {
     if (_otpController.text.trim().isEmpty) {
@@ -316,50 +276,25 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           );
         }
       } else {
-        // Try fallback verification for development/testing
-        if (_otpController.text.trim() == '123456') {
-          setState(() {
-            _isOtpVerified = true;
-            _verificationToken = 'reset-token-123';
-            _isLoading = false; // CRITICAL: Reset loading state
-          });
-          ThemeHelpers.showThemedSnackBar(
-            context,
-            message: 'OTP verified successfully! (Test mode)',
-          );
-        } else {
-          setState(() {
-            _isLoading = false; // CRITICAL: Reset loading state
-          });
-          ThemeHelpers.showThemedSnackBar(
-            context,
-            message: 'Invalid OTP. Check your email or use "123456" for testing.',
-            isError: true,
-          );
-        }
+        setState(() {
+          _isLoading = false; // CRITICAL: Reset loading state
+        });
+        ThemeHelpers.showThemedSnackBar(
+          context,
+          message: 'Invalid OTP. Please check the code sent to your email.',
+          isError: true,
+        );
       }
     } catch (e) {
       print('OTP verification error: $e');
       setState(() {
         _isLoading = false; // CRITICAL: Reset loading state on exception
       });
-      // Fallback: Mock OTP verification for testing
-      if (_otpController.text.trim() == '123456') {
-        setState(() {
-          _isOtpVerified = true;
-          _verificationToken = 'reset-token-123';
-        });
-        ThemeHelpers.showThemedSnackBar(
-          context,
-          message: 'OTP verified successfully! (Offline mode)',
-        );
-      } else {
-        ThemeHelpers.showThemedSnackBar(
-          context,
-          message: 'Network error. Use "123456" for testing.',
-          isError: true,
-        );
-      }
+      ThemeHelpers.showThemedSnackBar(
+        context,
+        message: 'Network error. Please check your connection.',
+        isError: true,
+      );
     }
   }
 
@@ -666,7 +601,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             text: 'Verify Email',
             onPressed: _isLoading ? () {} : _checkEmailExists,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 199, 76, 173),
+              backgroundColor: AppTheme.primaryColor,
               foregroundColor: AppTheme.textOnPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -698,7 +633,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               text: _isLoading ? 'Sending OTP...' : 'Send OTP',
               onPressed: _isLoading ? () {} : _sendOTP,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 215, 107, 186),
+                backgroundColor: AppTheme.secondaryColor,
                 foregroundColor: AppTheme.textOnPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -774,7 +709,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             text: 'Verify OTP',
             onPressed: _isLoading ? () {} : _verifyOtp,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 230, 140, 200),
+              backgroundColor: AppTheme.secondaryVariant,
               foregroundColor: AppTheme.textOnPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -919,7 +854,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           text: 'Reset Password',
           onPressed: _isLoading ? () {} : _changePassword,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 184, 58, 158),
+            backgroundColor: AppTheme.primaryVariant,
             foregroundColor: AppTheme.textOnPrimary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

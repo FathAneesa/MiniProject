@@ -30,7 +30,7 @@ class ThemeHelpers {
     EdgeInsetsGeometry? margin,
   }) {
     return Card(
-      color: AppTheme.cardBackground.withAlpha(217),
+      color: AppTheme.cardBackground,
       elevation: 10,
       margin: margin ?? const EdgeInsets.symmetric(horizontal: 24),
       shape: RoundedRectangleBorder(
